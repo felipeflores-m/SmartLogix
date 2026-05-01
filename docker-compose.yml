@@ -1,0 +1,85 @@
+services:
+  postgres-inventory:
+    image: postgres:16
+    container_name: smartlogix-postgres-inventory
+    environment:
+      POSTGRES_DB: smartlogix_inventory_db
+      POSTGRES_USER: smartlogix
+      POSTGRES_PASSWORD: smartlogix123
+    ports:
+      - "5433:5432"
+    volumes:
+      - smartlogix_inventory_data:/var/lib/postgresql/data
+    networks:
+      - smartlogix-network
+
+  postgres-orders:
+    image: postgres:16
+    container_name: smartlogix-postgres-orders
+    environment:
+      POSTGRES_DB: smartlogix_orders_db
+      POSTGRES_USER: smartlogix
+      POSTGRES_PASSWORD: smartlogix123
+    ports:
+      - "5434:5432"
+    volumes:
+      - smartlogix_orders_data:/var/lib/postgresql/data
+    networks:
+      - smartlogix-network
+
+  postgres-shipping:
+    image: postgres:16
+    container_name: smartlogix-postgres-shipping
+    environment:
+      POSTGRES_DB: smartlogix_shipping_db
+      POSTGRES_USER: smartlogix
+      POSTGRES_PASSWORD: smartlogix123
+    ports:
+      - "5435:5432"
+    volumes:
+      - smartlogix_shipping_data:/var/lib/postgresql/data
+    networks:
+      - smartlogix-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: smartlogix-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: smartlogix
+      RABBITMQ_DEFAULT_PASS: smartlogix123
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - smartlogix_rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - smartlogix-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: smartlogix-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@smartlogix.cl
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    volumes:
+      - smartlogix_pgadmin_data:/var/lib/pgadmin
+    networks:
+      - smartlogix-network
+
+networks:
+  smartlogix-network:
+    name: smartlogix-network
+
+volumes:
+  smartlogix_inventory_data:
+    name: smartlogix_inventory_data
+  smartlogix_orders_data:
+    name: smartlogix_orders_data
+  smartlogix_shipping_data:
+    name: smartlogix_shipping_data
+  smartlogix_rabbitmq_data:
+    name: smartlogix_rabbitmq_data
+  smartlogix_pgadmin_data:
+    name: smartlogix_pgadmin_data
