@@ -38,7 +38,7 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
         }
 
         response.setHeader(CORRELATION_ID_HEADER, correlationId);
-        log.info(
+        log.debug(
                 "Gateway request method={} path={} correlationId={}",
                 request.getMethod(),
                 request.getRequestURI(),

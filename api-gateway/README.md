@@ -12,6 +12,7 @@ Este componente no contiene lógica de negocio, JPA, entities ni repositories. E
 
 | Ruta del gateway | Microservicio destino | Puerto destino |
 | --- | --- | --- |
+| `/api/auth/**` | `identity-service` | `http://localhost:8084` |
 | `/api/inventory/**` | `inventory-service` | `http://localhost:8081` |
 | `/api/orders/**` | `order-service` | `http://localhost:8082` |
 | `/api/shipping/**` | `shipping-service` | `http://localhost:8083` |
@@ -21,12 +22,14 @@ Este componente no contiene lógica de negocio, JPA, entities ni repositories. E
 - `inventory-service`: `8081`
 - `order-service`: `8082`
 - `shipping-service`: `8083`
+- `identity-service`: `8084`
 
 ## Funciones implementadas
 
 - Enrutamiento hacia `inventory-service`, `order-service` y `shipping-service`.
+- Enrutamiento hacia `identity-service` para login y datos de usuario autenticado.
 - CORS de desarrollo para `http://localhost:3000` y `http://localhost:5173`.
-- Seguridad básica permisiva para MVP académico.
+- Validación JWT para rutas protegidas del sistema.
 - Actuator health para validar disponibilidad del gateway.
 - Header `X-Correlation-Id` para trazabilidad de solicitudes.
 - Manejo global de errores con `GlobalExceptionHandler`.
@@ -36,6 +39,37 @@ Este componente no contiene lógica de negocio, JPA, entities ni repositories. E
 ## Headers útiles
 
 - `X-Correlation-Id`: identificador de trazabilidad por solicitud. Si el cliente lo envía, el gateway lo reutiliza. Si no viene en la request, el gateway genera un UUID, lo agrega a la request procesada internamente y lo devuelve en la respuesta.
+- `Authorization`: debe enviarse como `Bearer <accessToken>` para acceder a rutas protegidas.
+
+## Flujo de login
+
+1. Obtener token:
+
+```http
+POST http://localhost:8080/api/auth/login
+```
+
+Body:
+
+```json
+{
+  "email": "admin@smartlogix.cl",
+  "password": "admin123"
+}
+```
+
+2. Copiar `data.accessToken`.
+3. Usar el token en rutas protegidas:
+
+```text
+Authorization: Bearer <accessToken>
+```
+
+4. Probar usuario autenticado:
+
+```http
+GET http://localhost:8080/api/auth/me
+```
 
 ## Ejecutar
 
@@ -57,7 +91,7 @@ Existe una base de datos llamada `gateway-service` registrada en pgAdmin. En est
 
 ## Seguridad y CORS
 
-La configuración actual permite probar las rutas del gateway durante el desarrollo académico. `SecurityConfig` deja abierto `/actuator/health` y las rutas `/api/**`; más adelante se puede activar validación JWT/OAuth2 Resource Server.
+La configuración actual permite sin token `POST /api/auth/login`, `/actuator/health`, `/actuator/info` y `/actuator/gateway/routes`. Las rutas `/api/inventory/**`, `/api/orders/**`, `/api/shipping/**` y `/api/auth/me` requieren JWT válido emitido por `identity-service`.
 
 `CorsConfig` permite temporalmente los orígenes locales:
 

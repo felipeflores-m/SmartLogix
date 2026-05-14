@@ -11,8 +11,8 @@
 	<groupId>cl.duoc.smartlogix</groupId>
 	<artifactId>inventory-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
+	<name>inventory-service</name>
+	<description>SmartLogix inventory microservice</description>
 	<url/>
 	<licenses>
 		<license/>

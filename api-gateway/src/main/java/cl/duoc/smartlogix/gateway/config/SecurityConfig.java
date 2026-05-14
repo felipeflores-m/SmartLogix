@@ -1,12 +1,26 @@
 package cl.duoc.smartlogix.gateway.config;
 
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtException;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -19,16 +33,46 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(authorize -> authorize
-                        // Health is public so the team can validate that the gateway is running.
-                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/info", "/actuator/gateway/routes").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // Gateway routes remain open temporarily for MVP development and initial demos.
-                        .requestMatchers("/api/**").permitAll()
-                        // Avoid blocking early academic tests before real authentication is implemented.
-                        .anyRequest().permitAll()
-                );
+                        .requestMatchers("/api/auth/me").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/inventory/**", "/api/orders/**", "/api/shipping/**")
+                        .hasAnyRole("ADMIN", "OPERATOR", "VIEWER")
+                        .requestMatchers("/api/inventory/**", "/api/orders/**", "/api/shipping/**")
+                        .hasAnyRole("ADMIN", "OPERATOR")
+                        .anyRequest().authenticated()
+                )
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
 
-        // JWT/OAuth2 Resource Server validation will be enabled here when the MVP adds real tokens.
         return http.build();
+    }
+
+    @Bean
+    public JwtDecoder jwtDecoder(@Value("${smartlogix.jwt.secret}") String secret) {
+        return NimbusJwtDecoder.withSecretKey(secretKey(secret))
+                .macAlgorithm(MacAlgorithm.HS256)
+                .build();
+    }
+
+    @Bean
+    public Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter() {
+        return jwt -> {
+            String role = jwt.getClaimAsString("role");
+
+            if (role == null || role.isBlank()) {
+                throw new JwtException("JWT role claim is required");
+            }
+
+            return new JwtAuthenticationToken(
+                    jwt,
+                    List.of(new SimpleGrantedAuthority("ROLE_" + role)),
+                    jwt.getSubject()
+            );
+        };
+    }
+
+    private SecretKey secretKey(String secret) {
+        return new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
     }
 }

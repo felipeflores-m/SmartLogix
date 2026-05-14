@@ -1,0 +1,27 @@
+package cl.duoc.smartlogix.gateway.route;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cloud.gateway.server.mvc.config.GatewayMvcProperties;
+
+@SpringBootTest
+class GatewayRoutesPropertiesTest {
+
+    @Autowired
+    private GatewayMvcProperties gatewayMvcProperties;
+
+    @Test
+    void shouldBindGatewayWebMvcRoutes() {
+        assertThat(gatewayMvcProperties.getRoutes()).hasSize(4);
+
+        assertThat(gatewayMvcProperties.getRoutes())
+                .extracting("id")
+                .containsExactly("identity-service", "inventory-service", "order-service", "shipping-service");
+
+        assertThat(gatewayMvcProperties.getRoutes().getFirst().getUri().toString())
+                .isEqualTo(GatewayRoutesInfo.AUTH_URI);
+    }
+}

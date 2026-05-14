@@ -11,8 +11,8 @@
 	<groupId>cl.duoc.smartlogix</groupId>
 	<artifactId>shipping-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
+	<name>shipping-service</name>
+	<description>SmartLogix shipping management microservice</description>
 	<url/>
 	<licenses>
 		<license/>

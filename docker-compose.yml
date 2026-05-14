@@ -41,6 +41,20 @@ services:
     networks:
       - smartlogix-network
 
+  postgres-identity:
+    image: postgres:16
+    container_name: smartlogix-postgres-identity
+    environment:
+      POSTGRES_DB: smartlogix_identity_db
+      POSTGRES_USER: smartlogix
+      POSTGRES_PASSWORD: smartlogix123
+    ports:
+      - "5436:5432"
+    volumes:
+      - smartlogix_identity_data:/var/lib/postgresql/data
+    networks:
+      - smartlogix-network
+
   rabbitmq:
     image: rabbitmq:3-management
     container_name: smartlogix-rabbitmq
@@ -79,6 +93,8 @@ volumes:
     name: smartlogix_orders_data
   smartlogix_shipping_data:
     name: smartlogix_shipping_data
+  smartlogix_identity_data:
+    name: smartlogix_identity_data
   smartlogix_rabbitmq_data:
     name: smartlogix_rabbitmq_data
   smartlogix_pgadmin_data:
