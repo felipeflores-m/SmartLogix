@@ -1,0 +1,171 @@
+import { useState, type FormEvent } from "react";
+import { ArrowRight, BarChart3, Boxes, ClipboardList, LockKeyhole, Mail, ShieldCheck, Truck } from "lucide-react";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/Button";
+import { TextInput } from "@/components/ui/TextInput";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { getSafeErrorMessage } from "@/lib/api/apiErrors";
+
+type LoginFormState = {
+  email: string;
+  password: string;
+};
+
+type LoginFormErrors = Partial<Record<keyof LoginFormState, string>>;
+
+const accessItems = [
+  { label: "Inventario", icon: Boxes },
+  { label: "Pedidos", icon: ClipboardList },
+  { label: "Despachos", icon: Truck },
+  { label: "Reportes", icon: BarChart3 }
+];
+
+export function LoginPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { checkingSession, login, isAuthenticated, loading, error, clearError } = useAuth();
+  const [form, setForm] = useState<LoginFormState>({ email: "", password: "" });
+  const [formErrors, setFormErrors] = useState<LoginFormErrors>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? "/dashboard";
+
+  if (isAuthenticated) {
+    return <Navigate to={from} replace />;
+  }
+
+  function validateForm(): LoginFormErrors {
+    const errors: LoginFormErrors = {};
+
+    if (!form.email.trim()) {
+      errors.email = "Ingresa tu correo.";
+    }
+
+    if (!form.password) {
+      errors.password = "Ingresa tu contrasena.";
+    }
+
+    return errors;
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    clearError();
+    setSubmitError(null);
+
+    const errors = validateForm();
+    setFormErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
+
+    try {
+      await login({ email: form.email.trim(), password: form.password });
+      navigate(from, { replace: true });
+    } catch (loginError) {
+      setSubmitError(getSafeErrorMessage(loginError));
+    }
+  }
+
+  return (
+    <main className="relative min-h-screen overflow-x-hidden bg-slate-950 text-white">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.16),_transparent_32%),linear-gradient(135deg,_#0F172A_0%,_#1E293B_52%,_#0B1120_100%)]" />
+      <div className="relative grid min-h-screen items-center gap-8 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(380px,440px)] lg:px-10 xl:px-16">
+        <section className="hidden max-w-xl lg:block">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500 shadow-lg shadow-blue-500/25">
+              <ShieldCheck className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div>
+              <p className="text-lg font-semibold tracking-tight">SmartLogix</p>
+              <p className="text-xs font-medium uppercase tracking-[0.22em] text-cyan-200">Operaciones</p>
+            </div>
+          </div>
+
+          <div className="mt-16">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-200">Gestion operacional</p>
+            <h1 className="mt-4 max-w-lg text-4xl font-semibold tracking-tight text-white xl:text-5xl">
+              Control central para la operacion logistica.
+            </h1>
+            <p className="mt-5 max-w-md text-sm leading-6 text-slate-300">
+              Acceso seguro al panel de inventario, pedidos, despachos y reportes.
+            </p>
+          </div>
+
+          <div className="mt-10 grid max-w-lg grid-cols-2 gap-3">
+            {accessItems.map((item) => (
+              <div key={item.label} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3 backdrop-blur">
+                <item.icon className="h-4 w-4 text-cyan-200" aria-hidden="true" />
+                <span className="text-sm font-medium text-slate-100">{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="mx-auto flex w-full max-w-[430px] items-center justify-center">
+          <div className="w-full">
+            <div className="mb-6 flex items-center justify-center gap-3 lg:hidden">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500">
+                <ShieldCheck className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <p className="text-lg font-semibold">SmartLogix</p>
+            </div>
+
+            <div className="rounded-3xl border border-white/20 bg-white p-6 text-slate-950 shadow-2xl shadow-black/25 sm:p-8">
+              <div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-brand-700">
+                  <LockKeyhole className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <h2 className="mt-5 text-2xl font-semibold tracking-tight">Panel de acceso</h2>
+                <p className="mt-2 text-sm text-slate-600">Ingresa tus credenciales para continuar.</p>
+              </div>
+
+              {checkingSession ? (
+                <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">
+                  Verificando sesion...
+                </div>
+              ) : null}
+
+              <form className="mt-6 space-y-4" onSubmit={handleSubmit} noValidate>
+                <TextInput
+                  label="Correo electronico"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="correo@smartlogix.cl"
+                  value={form.email}
+                  error={formErrors.email}
+                  leadingIcon={<Mail className="h-4 w-4" aria-hidden="true" />}
+                  onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
+                />
+                <TextInput
+                  label="Contrasena"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  placeholder="Ingresa tu contrasena"
+                  value={form.password}
+                  error={formErrors.password}
+                  leadingIcon={<LockKeyhole className="h-4 w-4" aria-hidden="true" />}
+                  onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
+                />
+
+                {submitError || error ? (
+                  <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                    {submitError ?? error}
+                  </div>
+                ) : null}
+
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Validando..." : "Iniciar sesion"}
+                  {!loading ? <ArrowRight className="h-4 w-4" aria-hidden="true" /> : null}
+                </Button>
+              </form>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}
