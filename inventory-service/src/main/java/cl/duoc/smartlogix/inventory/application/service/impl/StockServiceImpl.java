@@ -15,6 +15,7 @@ import cl.duoc.smartlogix.inventory.infrastructure.persistence.repository.StockM
 import cl.duoc.smartlogix.inventory.infrastructure.persistence.repository.StockRepository;
 import cl.duoc.smartlogix.inventory.infrastructure.persistence.repository.WarehouseRepository;
 import cl.duoc.smartlogix.inventory.presentation.dto.request.CreateStockMovementRequest;
+import cl.duoc.smartlogix.inventory.presentation.dto.request.UpdateStockMinimumRequest;
 import cl.duoc.smartlogix.inventory.presentation.dto.response.StockMovementResponse;
 import cl.duoc.smartlogix.inventory.presentation.dto.response.StockResponse;
 import java.util.List;
@@ -87,6 +88,20 @@ public class StockServiceImpl implements StockService {
         return stockRepository.findByProductId(productId).stream()
                 .map(StockMapper::toResponse)
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public StockResponse updateMinimumStock(Long productId, Long warehouseId, UpdateStockMinimumRequest request) {
+        ProductEntity product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
+        WarehouseEntity warehouse = warehouseRepository.findById(warehouseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Warehouse not found with id: " + warehouseId));
+
+        StockEntity stock = getOrCreateStock(product, warehouse);
+        stock.setMinimumStock(request.getMinimumStock());
+
+        return StockMapper.toResponse(stockRepository.save(stock));
     }
 
     @Override

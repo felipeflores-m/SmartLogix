@@ -2,6 +2,7 @@ package cl.duoc.smartlogix.inventory.presentation.controller;
 
 import cl.duoc.smartlogix.inventory.application.service.StockService;
 import cl.duoc.smartlogix.inventory.presentation.dto.request.CreateStockMovementRequest;
+import cl.duoc.smartlogix.inventory.presentation.dto.request.UpdateStockMinimumRequest;
 import cl.duoc.smartlogix.inventory.presentation.dto.response.StockMovementResponse;
 import cl.duoc.smartlogix.inventory.presentation.dto.response.StockResponse;
 import cl.duoc.smartlogix.inventory.shared.response.ApiResponse;
@@ -13,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -39,6 +41,19 @@ public class StockController {
                 .success(true)
                 .message("Stock movements found")
                 .data(stockService.findAllMovements())
+                .build());
+    }
+
+    @PutMapping("/product/{productId}/warehouse/{warehouseId}/minimum-stock")
+    public ResponseEntity<ApiResponse<StockResponse>> updateMinimumStock(
+            @PathVariable Long productId,
+            @PathVariable Long warehouseId,
+            @Valid @RequestBody UpdateStockMinimumRequest request
+    ) {
+        return ResponseEntity.ok(ApiResponse.<StockResponse>builder()
+                .success(true)
+                .message("Minimum stock updated")
+                .data(stockService.updateMinimumStock(productId, warehouseId, request))
                 .build());
     }
 

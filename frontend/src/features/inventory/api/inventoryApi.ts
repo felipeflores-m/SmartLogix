@@ -9,6 +9,7 @@ import type {
   ProductResponse,
   StockResponse,
   UpdateProductRequest,
+  UpdateStockMinimumRequest,
   WarehouseResponse
 } from "@/features/inventory/types/inventoryTypes";
 
@@ -89,6 +90,18 @@ export const inventoryApi = {
       body: input,
       parse: (value) => parseApiResponse(value, isRecord, "stock movement response")
     });
+
+    return response.data;
+  },
+
+  async updateMinimumStock(productId: number, warehouseId: number, input: UpdateStockMinimumRequest): Promise<StockResponse> {
+    const response = await httpClient.put<ApiResponse<StockResponse>>(
+      `${STOCK_PATH}/product/${productId}/warehouse/${warehouseId}/minimum-stock`,
+      {
+        body: input,
+        parse: (value) => parseApiResponse(value, parseStock, "minimum stock response")
+      }
+    );
 
     return response.data;
   },

@@ -40,7 +40,7 @@ export function createHttpError({ status, statusText, url, payload }: HttpErrorI
     status,
     statusText,
     details: payload,
-    publicMessage: getPublicHttpMessage(status),
+    publicMessage: getPublicHttpMessage(status, payload),
     technicalMessage: `HTTP ${status} ${statusText} at ${url}`
   });
 }
@@ -48,7 +48,7 @@ export function createHttpError({ status, statusText, url, payload }: HttpErrorI
 export function createTimeoutError(url: string): ApiClientError {
   return new ApiClientError({
     code: "TIMEOUT_ERROR",
-    publicMessage: "El backend no respondio a tiempo. Intenta nuevamente.",
+    publicMessage: "El sistema no respondio a tiempo. Intenta nuevamente.",
     technicalMessage: `Request timed out at ${url}`
   });
 }
@@ -56,7 +56,7 @@ export function createTimeoutError(url: string): ApiClientError {
 export function createNetworkError(url: string, cause: unknown): ApiClientError {
   return new ApiClientError({
     code: "NETWORK_ERROR",
-    publicMessage: "No fue posible conectar con el backend.",
+    publicMessage: "No fue posible conectar con el sistema.",
     technicalMessage: `Network request failed at ${url}`,
     details: cause
   });
@@ -65,7 +65,7 @@ export function createNetworkError(url: string, cause: unknown): ApiClientError 
 export function createValidationError(context: string, details?: unknown): ApiClientError {
   return new ApiClientError({
     code: "VALIDATION_ERROR",
-    publicMessage: "La respuesta del backend no coincide con el contrato esperado.",
+    publicMessage: "No se pudo interpretar la informacion recibida.",
     technicalMessage: `Invalid API response: ${context}`,
     details
   });
@@ -79,9 +79,15 @@ export function getSafeErrorMessage(error: unknown): string {
   return "No se pudo completar la operacion.";
 }
 
-function getPublicHttpMessage(status: number): string {
+function getPublicHttpMessage(status: number, payload?: unknown): string {
+  const responseMessage = getResponseMessage(payload);
+
+  if (status === 409 && responseMessage && isSkuDuplicateMessage(responseMessage)) {
+    return "Ya existe un producto registrado con este SKU.";
+  }
+
   if (status === 400) {
-    return "Los datos enviados no son validos.";
+    return "Revisa los datos ingresados.";
   }
 
   if (status === 401) {
@@ -93,12 +99,36 @@ function getPublicHttpMessage(status: number): string {
   }
 
   if (status === 404) {
-    return "El recurso solicitado no existe.";
+    return "No se encontro el recurso solicitado.";
+  }
+
+  if (status === 409) {
+    return "Ya existe un registro con estos datos.";
   }
 
   if (status >= 500) {
-    return "El backend no pudo procesar la solicitud.";
+    return "No fue posible completar la operacion. Intenta nuevamente.";
   }
 
   return "No se pudo completar la solicitud.";
+}
+
+function getResponseMessage(payload: unknown): string | null {
+  if (!isRecord(payload)) {
+    return null;
+  }
+
+  const message = payload.message;
+
+  return typeof message === "string" ? message : null;
+}
+
+function isSkuDuplicateMessage(message: string): boolean {
+  const normalizedMessage = message.toLocaleLowerCase("es-CL");
+
+  return normalizedMessage.includes("sku") && (normalizedMessage.includes("already exists") || normalizedMessage.includes("existe"));
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

@@ -45,8 +45,8 @@ export function Sidebar() {
               to={item.href}
               className={({ isActive }) =>
                 cn(
-                  "group inline-flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-slate-300 transition hover:bg-white/10 hover:text-white",
-                  isActive && "bg-white text-slate-950 shadow-sm hover:bg-white hover:text-slate-950"
+                  "group inline-flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-slate-300 transition-all duration-150 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/15 active:scale-[0.99]",
+                  isActive && "bg-white text-slate-950 shadow-sm hover:bg-white hover:text-slate-950 focus-visible:ring-white/30"
                 )
               }
             >

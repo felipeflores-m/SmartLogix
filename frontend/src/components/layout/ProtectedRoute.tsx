@@ -23,7 +23,7 @@ export function ProtectedRoute({ children }: PropsWithChildren) {
     return (
       <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-6 shadow-panel">
         <p className="text-sm font-semibold uppercase text-yellow-800">Sesion pendiente de validar</p>
-        <h2 className="mt-2 text-xl font-semibold text-slate-950">No fue posible contactar el backend</h2>
+        <h2 className="mt-2 text-xl font-semibold text-slate-950">No fue posible contactar el sistema</h2>
         <p className="mt-2 max-w-2xl text-sm text-slate-700">
           {error ?? "La sesion no pudo validarse. Reintenta cuando el sistema este disponible."}
         </p>

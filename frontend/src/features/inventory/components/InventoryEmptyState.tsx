@@ -8,7 +8,7 @@ type InventoryEmptyStateProps = {
 
 export function InventoryEmptyState({ hasActiveFilters, onResetFilters }: InventoryEmptyStateProps) {
   return (
-    <section className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center shadow-panel">
+    <section className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center shadow-panel transition-all duration-200 hover:border-slate-400 hover:shadow-md">
       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
         <Boxes className="h-6 w-6" aria-hidden="true" />
       </div>

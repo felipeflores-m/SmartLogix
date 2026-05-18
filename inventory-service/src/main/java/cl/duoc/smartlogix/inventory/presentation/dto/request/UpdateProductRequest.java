@@ -15,6 +15,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class UpdateProductRequest {
 
+    private String sku;
     private String name;
     private String description;
 

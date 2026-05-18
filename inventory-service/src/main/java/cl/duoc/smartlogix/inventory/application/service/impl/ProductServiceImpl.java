@@ -51,6 +51,19 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponse update(Long id, UpdateProductRequest request) {
         ProductEntity product = findProductEntityById(id);
 
+        if (StringUtils.hasText(request.getSku())) {
+            String sku = request.getSku().trim();
+            boolean skuBelongsToAnotherProduct = productRepository.findBySku(sku)
+                    .filter(existingProduct -> !existingProduct.getId().equals(id))
+                    .isPresent();
+
+            if (skuBelongsToAnotherProduct) {
+                throw new DuplicateResourceException("Product SKU already exists: " + sku);
+            }
+
+            product.setSku(sku);
+        }
+
         if (StringUtils.hasText(request.getName())) {
             product.setName(request.getName());
         }

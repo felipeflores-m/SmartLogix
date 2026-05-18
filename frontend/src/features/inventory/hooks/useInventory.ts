@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { getSafeErrorMessage } from "@/lib/api/apiErrors";
 import { inventoryApi } from "@/features/inventory/api/inventoryApi";
 import type {
-  CreateProductRequest,
+  CreateProductWithInitialStockRequest,
   CreateStockMovementRequest,
   InventoryFilters,
   InventoryItem,
   InventorySummary,
+  UpdateProductWithMinimumStockRequest,
   WarehouseResponse
 } from "@/features/inventory/types/inventoryTypes";
+import { getSafeErrorMessage } from "@/lib/api/apiErrors";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 const DEFAULT_FILTERS: InventoryFilters = {
   query: "",
@@ -24,6 +26,7 @@ export function useInventory() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const debouncedQuery = useDebouncedValue(filters.query, 400);
 
   const loadInventory = useCallback(async () => {
     setLoading(true);
@@ -46,9 +49,11 @@ export function useInventory() {
     void loadInventory();
   }, [loadInventory]);
 
-  const filteredItems = useMemo(() => filterInventory(items, filters), [filters, items]);
+  const effectiveFilters = useMemo(() => ({ ...filters, query: debouncedQuery }), [debouncedQuery, filters]);
+  const filteredItems = useMemo(() => filterInventory(items, effectiveFilters), [effectiveFilters, items]);
   const summary = useMemo(() => calculateSummary(items), [items]);
   const hasActiveFilters = filters.query.trim() !== "" || filters.stockStatus !== "all" || filters.warehouseId !== "all" || !filters.activeOnly;
+  const searching = filters.query !== debouncedQuery;
 
   const updateFilters = useCallback((nextFilters: Partial<InventoryFilters>) => {
     setFilters((current) => ({ ...current, ...nextFilters }));
@@ -59,16 +64,65 @@ export function useInventory() {
   }, []);
 
   const createProduct = useCallback(
-    async (input: CreateProductRequest) => {
+    async (input: CreateProductWithInitialStockRequest) => {
+      setSaving(true);
+      setError(null);
+      let productWasCreated = false;
+
+      try {
+        const product = await inventoryApi.createProduct(input.product);
+        productWasCreated = true;
+
+        if (input.stockSetup?.quantity) {
+          await inventoryApi.createStockMovement({
+            productId: product.id,
+            warehouseId: input.stockSetup.warehouseId,
+            type: "IN",
+            quantity: input.stockSetup.quantity,
+            reason: "Stock inicial"
+          });
+        }
+
+        if (input.stockSetup && input.stockSetup.minimumStock >= 0) {
+          await inventoryApi.updateMinimumStock(product.id, input.stockSetup.warehouseId, {
+            minimumStock: input.stockSetup.minimumStock
+          });
+        }
+
+        await loadInventory();
+      } catch (createError) {
+        if (productWasCreated) {
+          await loadInventory().catch(() => undefined);
+        }
+
+        const safeMessage = productWasCreated
+          ? "Producto registrado, pero no se pudo completar la configuracion de stock."
+          : getSafeErrorMessage(createError);
+        throw new Error(safeMessage);
+      } finally {
+        setSaving(false);
+      }
+    },
+    [loadInventory]
+  );
+
+  const updateProduct = useCallback(
+    async (productId: number, input: UpdateProductWithMinimumStockRequest) => {
       setSaving(true);
       setError(null);
 
       try {
-        await inventoryApi.createProduct(input);
+        await inventoryApi.updateProduct(productId, input.product);
+
+        if (input.stockMinimum) {
+          await inventoryApi.updateMinimumStock(productId, input.stockMinimum.warehouseId, {
+            minimumStock: input.stockMinimum.minimumStock
+          });
+        }
+
         await loadInventory();
-      } catch (createError) {
-        const safeMessage = getSafeErrorMessage(createError);
-        setError(safeMessage);
+      } catch (updateError) {
+        const safeMessage = getSafeErrorMessage(updateError);
         throw new Error(safeMessage);
       } finally {
         setSaving(false);
@@ -87,7 +141,24 @@ export function useInventory() {
         await loadInventory();
       } catch (movementError) {
         const safeMessage = getSafeErrorMessage(movementError);
-        setError(safeMessage);
+        throw new Error(safeMessage);
+      } finally {
+        setSaving(false);
+      }
+    },
+    [loadInventory]
+  );
+
+  const deactivateProduct = useCallback(
+    async (productId: number) => {
+      setSaving(true);
+      setError(null);
+
+      try {
+        await inventoryApi.deactivateProduct(productId);
+        await loadInventory();
+      } catch (deactivateError) {
+        const safeMessage = getSafeErrorMessage(deactivateError);
         throw new Error(safeMessage);
       } finally {
         setSaving(false);
@@ -106,6 +177,7 @@ export function useInventory() {
     summary,
     loading,
     saving,
+    searching,
     error,
     isEmpty: !loading && !error && items.length === 0,
     hasNoResults: !loading && !error && items.length > 0 && filteredItems.length === 0,
@@ -114,7 +186,9 @@ export function useInventory() {
     resetFilters,
     refresh: loadInventory,
     createProduct,
+    updateProduct,
     createStockMovement,
+    deactivateProduct,
     getItemDetail
   };
 }

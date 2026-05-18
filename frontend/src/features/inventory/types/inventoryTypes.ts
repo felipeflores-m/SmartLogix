@@ -102,11 +102,29 @@ export type CreateProductRequest = {
   unitPrice: number;
 };
 
+export type CreateProductWithInitialStockRequest = {
+  product: CreateProductRequest;
+  stockSetup?: {
+    warehouseId: number;
+    quantity: number;
+    minimumStock: number;
+  };
+};
+
 export type UpdateProductRequest = {
+  sku?: string;
   name?: string;
   description?: string;
   unitPrice?: number;
   active?: boolean;
+};
+
+export type UpdateProductWithMinimumStockRequest = {
+  product: UpdateProductRequest;
+  stockMinimum?: {
+    warehouseId: number;
+    minimumStock: number;
+  };
 };
 
 export type CreateStockMovementRequest = {
@@ -116,4 +134,8 @@ export type CreateStockMovementRequest = {
   quantity: number;
   reason?: string;
   referenceCode?: string;
+};
+
+export type UpdateStockMinimumRequest = {
+  minimumStock: number;
 };

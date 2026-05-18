@@ -9,7 +9,7 @@ type InventoryErrorStateProps = {
 
 export function InventoryErrorState({ message, loading, onRetry }: InventoryErrorStateProps) {
   return (
-    <section className="rounded-2xl border border-red-200 bg-red-50 p-6 shadow-panel">
+    <section className="rounded-2xl border border-red-200 bg-red-50 p-6 shadow-panel transition-all duration-200 hover:border-red-300 hover:shadow-md">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-red-600">
