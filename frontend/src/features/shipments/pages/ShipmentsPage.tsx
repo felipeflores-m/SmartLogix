@@ -1,0 +1,158 @@
+import { useState } from "react";
+import { RadioTower, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import { useToast } from "@/components/ui/toastContext";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ShipmentDetailDrawer } from "@/features/shipments/components/ShipmentDetailDrawer";
+import { ShipmentEmptyState } from "@/features/shipments/components/ShipmentEmptyState";
+import { ShipmentErrorState } from "@/features/shipments/components/ShipmentErrorState";
+import { ShipmentStatusModal } from "@/features/shipments/components/ShipmentStatusModal";
+import { ShipmentsFilters } from "@/features/shipments/components/ShipmentsFilters";
+import { ShipmentsSummaryCards } from "@/features/shipments/components/ShipmentsSummaryCards";
+import { ShipmentsTable } from "@/features/shipments/components/ShipmentsTable";
+import { useShipmentDetail } from "@/features/shipments/hooks/useShipmentDetail";
+import { useShipments } from "@/features/shipments/hooks/useShipments";
+import type { Shipment, ShipmentStatus } from "@/features/shipments/types/shipmentTypes";
+import { useBackendStatus } from "@/hooks/useBackendStatus";
+
+export function ShipmentsPage() {
+  const shipments = useShipments();
+  const detail = useShipmentDetail();
+  const { health, loading: statusLoading } = useBackendStatus();
+  const toast = useToast();
+  const [statusShipment, setStatusShipment] = useState<Shipment | null>(null);
+  const [cancelShipment, setCancelShipment] = useState<Shipment | null>(null);
+  const isBackendUp = health?.status === "UP";
+
+  function handleViewDetail(shipment: Shipment) {
+    void detail.openShipment(shipment.id);
+  }
+
+  async function handleUpdateStatus(input: { status: ShipmentStatus; comment?: string }) {
+    if (!statusShipment) {
+      return;
+    }
+
+    try {
+      await shipments.updateShipmentStatus(statusShipment.id, input);
+      toast.success("Estado actualizado correctamente.");
+      setStatusShipment(null);
+      detail.closeShipment();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No fue posible completar la operacion.");
+    }
+  }
+
+  async function handleCancelShipment() {
+    if (!cancelShipment) {
+      return;
+    }
+
+    try {
+      await shipments.cancelShipment(cancelShipment.id);
+      toast.success("Envio cancelado correctamente.");
+      setCancelShipment(null);
+      detail.closeShipment();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No fue posible completar la operacion.");
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-panel transition-all duration-200 hover:border-slate-300 hover:shadow-md sm:p-6">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <div className="max-w-3xl">
+            <p className="text-sm font-semibold uppercase tracking-wide text-brand-700">Gestion de despachos</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">Envios</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              Consulta y administra el seguimiento de despachos registrados.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+              <div className="flex items-center gap-2">
+                <RadioTower className="h-4 w-4 text-slate-500" aria-hidden="true" />
+                <StatusBadge
+                  label={statusLoading ? "Verificando" : isBackendUp ? "Sistema operativo" : "Sin conexion"}
+                  tone={statusLoading ? "neutral" : isBackendUp ? "success" : "danger"}
+                />
+              </div>
+            </div>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button type="button" variant="secondary" onClick={() => void shipments.refresh()} disabled={shipments.loading}>
+                  <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                  Actualizar
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Actualizar envios</TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
+      </section>
+
+      <ShipmentsSummaryCards summary={shipments.summary} loading={shipments.loading} />
+
+      <ShipmentsFilters
+        filters={shipments.filters}
+        shipments={shipments.shipments}
+        carriers={shipments.carriers}
+        loading={shipments.loading}
+        searching={shipments.searching}
+        hasActiveFilters={shipments.hasActiveFilters}
+        onChange={shipments.updateFilters}
+        onReset={shipments.resetFilters}
+        onRefresh={() => void shipments.refresh()}
+      />
+
+      {shipments.error ? (
+        <ShipmentErrorState message={shipments.error} loading={shipments.loading} onRetry={() => void shipments.refresh()} />
+      ) : shipments.isEmpty || shipments.hasNoResults ? (
+        <ShipmentEmptyState hasActiveFilters={shipments.hasActiveFilters} onResetFilters={shipments.resetFilters} />
+      ) : (
+        <ShipmentsTable
+          shipments={shipments.filteredShipments}
+          loading={shipments.loading}
+          onViewDetail={handleViewDetail}
+          onChangeStatus={setStatusShipment}
+          onCancel={setCancelShipment}
+        />
+      )}
+
+      <ShipmentDetailDrawer
+        shipment={detail.shipment}
+        history={detail.history}
+        loading={detail.loading}
+        error={detail.error}
+        onClose={detail.closeShipment}
+        onChangeStatus={setStatusShipment}
+        onCancel={setCancelShipment}
+      />
+
+      <ShipmentStatusModal
+        shipment={statusShipment}
+        loading={shipments.saving}
+        onClose={() => setStatusShipment(null)}
+        onConfirm={(input) => void handleUpdateStatus(input)}
+      />
+
+      <ConfirmDialog
+        open={Boolean(cancelShipment)}
+        title="Cancelar envio"
+        description="Esta accion detendra el despacho seleccionado."
+        confirmLabel="Cancelar envio"
+        loading={shipments.saving}
+        tone="danger"
+        onClose={() => setCancelShipment(null)}
+        onConfirm={() => void handleCancelShipment()}
+      >
+        {cancelShipment ? `${cancelShipment.shipmentNumber} quedara cancelado y conservara su historial.` : null}
+      </ConfirmDialog>
+    </div>
+  );
+}

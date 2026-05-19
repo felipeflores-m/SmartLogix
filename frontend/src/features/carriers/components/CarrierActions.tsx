@@ -47,7 +47,7 @@ function ActionIconButton({
       variant="secondary"
       className={cn(
         "rounded-xl border-slate-300 text-slate-700 !shadow-none hover:-translate-y-0 hover:border-slate-400 hover:bg-slate-50 hover:!shadow-none focus-visible:ring-4",
-        layout === "icon" ? "h-10 min-h-10 w-10 p-0" : "min-h-11 justify-start px-3 py-2 text-xs",
+        layout === "icon" ? "h-10 min-h-10 w-10 p-0" : "min-h-11 justify-start px-3 py-2 text-left text-xs leading-tight",
         tone === "success" && "border-green-200 text-green-700 hover:border-green-300 hover:bg-green-50 hover:text-green-800 focus-visible:ring-green-600/15",
         tone === "warning" && "border-yellow-200 text-yellow-700 hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800 focus-visible:ring-yellow-600/15"
       )}
@@ -55,7 +55,7 @@ function ActionIconButton({
       aria-label={label}
     >
       <Icon aria-hidden="true" absoluteStrokeWidth className="h-5 w-5 shrink-0" strokeWidth={2.5} />
-      {layout === "full" ? <span className="truncate">{label}</span> : null}
+      {layout === "full" ? <span className="min-w-0 whitespace-normal break-words">{label}</span> : null}
     </Button>
   );
 

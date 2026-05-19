@@ -1,4 +1,4 @@
-import { Activity, AlertTriangle, BarChart3, Boxes, CheckCircle2, ClipboardList, Clock3, RadioTower, Truck } from "lucide-react";
+import { Activity, AlertTriangle, BarChart3, Boxes, CheckCircle2, ClipboardList, Clock3, RadioTower, Truck, Warehouse } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { InfoCard } from "@/components/ui/InfoCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -58,6 +58,12 @@ export function DashboardPage() {
       value: getCarrierValue(carriers.loading, carriers.error, carriers.summary.activeCarriers),
       supportingText: "Proveedores habilitados.",
       icon: Truck
+    },
+    {
+      title: "Bodegas activas",
+      value: getInventoryValue(inventory.loading, inventory.error, inventory.warehouses.filter((warehouse) => warehouse.active).length),
+      supportingText: "Ubicaciones operativas.",
+      icon: Warehouse
     },
     {
       title: "Pedidos en despacho",
@@ -140,7 +146,7 @@ export function DashboardPage() {
               <BarChart3 className="h-5 w-5 text-brand-700" aria-hidden="true" />
               <h3 className="text-lg font-semibold text-slate-950">Reportes</h3>
             </div>
-            <p className="mt-3 text-sm leading-6 text-slate-600">Sin reportes disponibles por el momento.</p>
+            <p className="mt-3 text-sm leading-6 text-slate-600">Indicadores operacionales disponibles desde el modulo Reportes.</p>
           </div>
 
           <InfoCard

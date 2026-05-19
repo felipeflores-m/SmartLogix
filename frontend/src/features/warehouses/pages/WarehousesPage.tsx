@@ -1,0 +1,120 @@
+import { useState } from "react";
+import { Plus, RadioTower, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import { useToast } from "@/components/ui/toastContext";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { WarehouseDetailDrawer } from "@/features/warehouses/components/WarehouseDetailDrawer";
+import { WarehouseEmptyState } from "@/features/warehouses/components/WarehouseEmptyState";
+import { WarehouseErrorState } from "@/features/warehouses/components/WarehouseErrorState";
+import { WarehouseFormModal } from "@/features/warehouses/components/WarehouseFormModal";
+import { WarehousesFilters } from "@/features/warehouses/components/WarehousesFilters";
+import { WarehousesSummaryCards } from "@/features/warehouses/components/WarehousesSummaryCards";
+import { WarehousesTable } from "@/features/warehouses/components/WarehousesTable";
+import { useWarehouseDetail } from "@/features/warehouses/hooks/useWarehouseDetail";
+import { useWarehouses } from "@/features/warehouses/hooks/useWarehouses";
+import type { Warehouse, WarehouseFormValues } from "@/features/warehouses/types/warehouseTypes";
+import { useBackendStatus } from "@/hooks/useBackendStatus";
+
+export function WarehousesPage() {
+  const warehouses = useWarehouses();
+  const detail = useWarehouseDetail();
+  const { health, loading: statusLoading } = useBackendStatus();
+  const toast = useToast();
+  const [formOpen, setFormOpen] = useState(false);
+  const isBackendUp = health?.status === "UP";
+
+  function handleViewDetail(warehouse: Warehouse) {
+    void detail.openWarehouse(warehouse.id);
+  }
+
+  async function handleCreateWarehouse(values: WarehouseFormValues) {
+    await warehouses.createWarehouse(values);
+    toast.success("Bodega registrada correctamente.");
+  }
+
+  return (
+    <div className="space-y-6">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-panel transition-all duration-200 hover:border-slate-300 hover:shadow-md sm:p-6">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <div className="max-w-3xl">
+            <p className="text-sm font-semibold uppercase tracking-wide text-brand-700">Gestion de ubicaciones</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">Bodegas</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              Administra ubicaciones operativas y disponibilidad de stock.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+              <div className="flex items-center gap-2">
+                <RadioTower className="h-4 w-4 text-slate-500" aria-hidden="true" />
+                <StatusBadge
+                  label={statusLoading ? "Verificando" : isBackendUp ? "Sistema operativo" : "Sin conexion"}
+                  tone={statusLoading ? "neutral" : isBackendUp ? "success" : "danger"}
+                />
+              </div>
+            </div>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button type="button" onClick={() => setFormOpen(true)}>
+                  <Plus className="h-4 w-4" aria-hidden="true" />
+                  Registrar bodega
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Registrar bodega</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button type="button" variant="secondary" onClick={() => void warehouses.refresh()} disabled={warehouses.loading}>
+                  <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                  Actualizar
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Actualizar bodegas</TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
+      </section>
+
+      <WarehousesSummaryCards summary={warehouses.summary} loading={warehouses.loading} />
+
+      <WarehousesFilters
+        filters={warehouses.filters}
+        warehouses={warehouses.warehouses}
+        locations={warehouses.locations}
+        loading={warehouses.loading}
+        searching={warehouses.searching}
+        hasActiveFilters={warehouses.hasActiveFilters}
+        onChange={warehouses.updateFilters}
+        onReset={warehouses.resetFilters}
+        onRefresh={() => void warehouses.refresh()}
+      />
+
+      {warehouses.error ? (
+        <WarehouseErrorState message={warehouses.error} loading={warehouses.loading} onRetry={() => void warehouses.refresh()} />
+      ) : warehouses.isEmpty || warehouses.hasNoResults ? (
+        <WarehouseEmptyState hasActiveFilters={warehouses.hasActiveFilters} onResetFilters={warehouses.resetFilters} />
+      ) : (
+        <WarehousesTable
+          warehouses={warehouses.filteredWarehouses}
+          loading={warehouses.loading}
+          onViewDetail={handleViewDetail}
+          onViewStock={handleViewDetail}
+        />
+      )}
+
+      <WarehouseDetailDrawer warehouse={detail.warehouse} loading={detail.loading} error={detail.error} onClose={detail.closeWarehouse} />
+
+      <WarehouseFormModal
+        open={formOpen}
+        saving={warehouses.saving}
+        warehouses={warehouses.warehouses}
+        onClose={() => setFormOpen(false)}
+        onSubmit={handleCreateWarehouse}
+      />
+    </div>
+  );
+}
