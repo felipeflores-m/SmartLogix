@@ -1,17 +1,20 @@
-import { Activity, AlertTriangle, BarChart3, Boxes, ClipboardList, RadioTower, Truck } from "lucide-react";
+import { Activity, AlertTriangle, BarChart3, Boxes, CheckCircle2, ClipboardList, Clock3, RadioTower, Truck } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { InfoCard } from "@/components/ui/InfoCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useCarriers } from "@/features/carriers/hooks/useCarriers";
 import { useInventory } from "@/features/inventory/hooks/useInventory";
+import { useOrders } from "@/features/orders/hooks/useOrders";
 import { useBackendStatus } from "@/hooks/useBackendStatus";
 
 export function DashboardPage() {
   const { user } = useAuth();
   const { health, loading, refresh } = useBackendStatus();
   const inventory = useInventory();
+  const orders = useOrders();
+  const carriers = useCarriers();
   const isBackendUp = health?.status === "UP";
-  const inventoryAlertCount = inventory.summary.lowStock + inventory.summary.outOfStock;
 
   const metricCards = [
     {
@@ -27,16 +30,46 @@ export function DashboardPage() {
       icon: ClipboardList
     },
     {
-      title: "Envios",
-      value: "Sin datos",
-      supportingText: "No hay despachos activos.",
+      title: "Total pedidos",
+      value: getOrderValue(orders.loading, orders.error, orders.summary.totalOrders),
+      supportingText: "Pedidos registrados.",
+      icon: ClipboardList
+    },
+    {
+      title: "Pendientes",
+      value: getOrderValue(orders.loading, orders.error, orders.summary.pendingOrders),
+      supportingText: "Requieren confirmacion.",
+      icon: Clock3
+    },
+    {
+      title: "Confirmados",
+      value: getOrderValue(orders.loading, orders.error, orders.summary.confirmedOrders),
+      supportingText: "Listos para preparacion.",
+      icon: CheckCircle2
+    },
+    {
+      title: "Incidencias",
+      value: getOrderValue(orders.loading, orders.error, orders.summary.cancelledOrders),
+      supportingText: "Pedidos cancelados.",
+      icon: AlertTriangle
+    },
+    {
+      title: "Transportistas activos",
+      value: getCarrierValue(carriers.loading, carriers.error, carriers.summary.activeCarriers),
+      supportingText: "Proveedores habilitados.",
       icon: Truck
     },
     {
-      title: "Alertas",
-      value: inventory.loading ? "..." : inventory.error ? "Sin datos" : inventoryAlertCount > 0 ? inventoryAlertCount.toLocaleString("es-CL") : "Sin alertas",
-      supportingText: inventoryAlertCount > 0 ? "Productos requieren revision." : "Operacion sin incidencias registradas.",
-      icon: AlertTriangle
+      title: "Pedidos en despacho",
+      value: getOrderValue(orders.loading, orders.error, orders.orders.filter((order) => order.status === "SHIPPED").length),
+      supportingText: "Pedidos con despacho iniciado.",
+      icon: RadioTower
+    },
+    {
+      title: "Envios asignados",
+      value: getCarrierValue(carriers.loading, carriers.error, carriers.summary.assignedShipments),
+      supportingText: "Despachos con transportista.",
+      icon: CheckCircle2
     }
   ];
 
@@ -75,7 +108,7 @@ export function DashboardPage() {
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         {metricCards.map((card) => (
           <InfoCard
             key={card.title}
@@ -122,6 +155,38 @@ export function DashboardPage() {
 }
 
 function getInventoryValue(loading: boolean, error: string | null, value: number): string {
+  if (loading) {
+    return "...";
+  }
+
+  if (error) {
+    return "Sin datos";
+  }
+
+  if (value === 0) {
+    return "Sin registros";
+  }
+
+  return value.toLocaleString("es-CL");
+}
+
+function getOrderValue(loading: boolean, error: string | null, value: number): string {
+  if (loading) {
+    return "...";
+  }
+
+  if (error) {
+    return "Sin datos";
+  }
+
+  if (value === 0) {
+    return "Sin registros";
+  }
+
+  return value.toLocaleString("es-CL");
+}
+
+function getCarrierValue(loading: boolean, error: string | null, value: number): string {
   if (loading) {
     return "...";
   }

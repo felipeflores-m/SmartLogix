@@ -9,7 +9,6 @@ import {
   MapPinned,
   RadioTower,
   Settings,
-  ShieldCheck,
   Truck,
   UsersRound,
   Warehouse
@@ -18,8 +17,10 @@ import { Navigate, createBrowserRouter } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { LoginPage } from "@/features/auth/pages/LoginPage";
+import { CarriersPage } from "@/features/carriers/pages/CarriersPage";
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
 import { InventoryPage } from "@/features/inventory/pages/InventoryPage";
+import { OrdersPage } from "@/features/orders/pages/OrdersPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { PlaceholderPage } from "@/pages/PlaceholderPage";
 
@@ -55,32 +56,7 @@ export const router = createBrowserRouter([
         path: "/pedidos",
         element: (
           <ProtectedRoute>
-            <PlaceholderPage
-              title="Pedidos"
-              description="Administra el estado y seguimiento de los pedidos registrados."
-              cards={[
-                {
-                  title: "Pedidos activos",
-                  description: "Ordenes creadas, confirmadas y en preparacion.",
-                  icon: <ClipboardList className="h-5 w-5" aria-hidden="true" />
-                },
-                {
-                  title: "Clientes",
-                  description: "Datos basicos del comprador y contacto logistico.",
-                  icon: <UsersRound className="h-5 w-5" aria-hidden="true" />
-                },
-                {
-                  title: "Historial de estados",
-                  description: "Seguimiento de cambios y avances del pedido.",
-                  icon: <GitBranch className="h-5 w-5" aria-hidden="true" />
-                },
-                {
-                  title: "Validaciones",
-                  description: "Reglas de negocio antes de confirmar pedidos.",
-                  icon: <ShieldCheck className="h-5 w-5" aria-hidden="true" />
-                }
-              ]}
-            />
+            <OrdersPage />
           </ProtectedRoute>
         )
       },
@@ -121,32 +97,7 @@ export const router = createBrowserRouter([
         path: "/transportistas",
         element: (
           <ProtectedRoute>
-            <PlaceholderPage
-              title="Transportistas"
-              description="Gestiona proveedores logisticos, cobertura y disponibilidad operacional."
-              cards={[
-                {
-                  title: "Proveedores logisticos",
-                  description: "Chilexpress, Starken, BlueExpress u otros integradores.",
-                  icon: <Truck className="h-5 w-5" aria-hidden="true" />
-                },
-                {
-                  title: "Estado de integracion",
-                  description: "Disponibilidad de cada proveedor logistico.",
-                  icon: <RadioTower className="h-5 w-5" aria-hidden="true" />
-                },
-                {
-                  title: "Continuidad",
-                  description: "Alternativas ante interrupciones de servicio.",
-                  icon: <ShieldCheck className="h-5 w-5" aria-hidden="true" />
-                },
-                {
-                  title: "SLA y cobertura",
-                  description: "Compromisos de entrega por zona y servicio.",
-                  icon: <MapPinned className="h-5 w-5" aria-hidden="true" />
-                }
-              ]}
-            />
+            <CarriersPage />
           </ProtectedRoute>
         )
       },

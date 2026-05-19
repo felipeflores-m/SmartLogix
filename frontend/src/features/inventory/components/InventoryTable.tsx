@@ -1,4 +1,4 @@
-import { Eye, Pencil, Power, SlidersHorizontal } from "lucide-react";
+import { Eye, Pencil, Power, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -37,7 +37,20 @@ export function InventoryTable({ items, loading, onViewDetail, onEditProduct, on
         <p className="text-sm font-medium text-slate-500">{loading ? "Cargando..." : `${items.length.toLocaleString("es-CL")} productos`}</p>
       </div>
 
-      <div className="overflow-x-auto overscroll-x-contain">
+      <div className="grid gap-3 p-3 md:hidden">
+        {loading ? <InventoryMobileSkeleton /> : items.map((item) => (
+          <InventoryMobileCard
+            key={item.productId}
+            item={item}
+            onViewDetail={onViewDetail}
+            onEditProduct={onEditProduct}
+            onAdjustStock={onAdjustStock}
+            onDeactivateProduct={onDeactivateProduct}
+          />
+        ))}
+      </div>
+
+      <div className="hidden overflow-x-auto overscroll-x-contain md:block">
         <table className="w-full min-w-[980px] divide-y divide-slate-200 text-left">
           <thead className="sticky top-0 z-10 bg-slate-50/95 backdrop-blur">
             <tr>
@@ -48,7 +61,7 @@ export function InventoryTable({ items, loading, onViewDetail, onEditProduct, on
               <TableHeader align="right">Precio</TableHeader>
               <TableHeader>Estado</TableHeader>
               <TableHeader>Actualizacion</TableHeader>
-              <TableHeader align="right" className="sticky right-0 z-20 bg-slate-50/95 pl-4 shadow-[-14px_0_22px_-22px_rgba(15,23,42,0.65)]">
+              <TableHeader align="right" className="sticky right-0 z-20 border-l border-slate-200 bg-slate-50/95 pl-4">
                 Acciones
               </TableHeader>
             </tr>
@@ -120,20 +133,12 @@ function InventoryTableRow({
       <TableCell>
         <span className="whitespace-nowrap text-slate-600">{formatDate(item.updatedAt)}</span>
       </TableCell>
-      <TableCell align="right" className="sticky right-0 z-10 bg-white pl-4 shadow-[-14px_0_22px_-22px_rgba(15,23,42,0.55)] transition-colors group-hover:bg-slate-50/95">
+      <TableCell align="right" className="sticky right-0 z-10 border-l border-slate-100 bg-white pl-4 transition-colors group-hover:bg-slate-50/95">
         <div className="inline-flex min-w-[178px] justify-end gap-1.5">
-          <ActionIconButton label="Ver detalle" onClick={() => onViewDetail(item)}>
-            <Eye className="h-4 w-4" aria-hidden="true" />
-          </ActionIconButton>
-          <ActionIconButton label="Editar producto" onClick={() => onEditProduct(item)}>
-            <Pencil className="h-4 w-4" aria-hidden="true" />
-          </ActionIconButton>
-          <ActionIconButton label="Ajustar stock" onClick={() => onAdjustStock(item)}>
-            <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
-          </ActionIconButton>
-          <ActionIconButton label="Desactivar producto" tone="danger" onClick={() => onDeactivateProduct(item)} disabled={!item.active}>
-            <Power className="h-4 w-4" aria-hidden="true" />
-          </ActionIconButton>
+          <ActionIconButton icon={Eye} label="Ver detalle" onClick={() => onViewDetail(item)} />
+          <ActionIconButton icon={Pencil} label="Editar producto" onClick={() => onEditProduct(item)} />
+          <ActionIconButton icon={SlidersHorizontal} label="Ajustar stock" onClick={() => onAdjustStock(item)} />
+          <ActionIconButton icon={Power} label="Desactivar producto" tone="danger" onClick={() => onDeactivateProduct(item)} disabled={!item.active} />
         </div>
       </TableCell>
     </tr>
@@ -153,6 +158,89 @@ function InventoryTableSkeleton() {
         </tr>
       ))}
     </>
+  );
+}
+
+function InventoryMobileSkeleton() {
+  return (
+    <>
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div key={index} className="rounded-2xl border border-slate-200 bg-white p-4">
+          <div className="h-4 w-28 animate-pulse rounded bg-slate-200" />
+          <div className="mt-4 h-5 w-44 animate-pulse rounded bg-slate-200" />
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="h-14 animate-pulse rounded-xl bg-slate-100" />
+            <div className="h-14 animate-pulse rounded-xl bg-slate-100" />
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="h-10 animate-pulse rounded-xl bg-slate-100" />
+            <div className="h-10 animate-pulse rounded-xl bg-slate-100" />
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
+function InventoryMobileCard({
+  item,
+  onViewDetail,
+  onEditProduct,
+  onAdjustStock,
+  onDeactivateProduct
+}: {
+  item: InventoryItem;
+  onViewDetail: (item: InventoryItem) => void;
+  onEditProduct: (item: InventoryItem) => void;
+  onAdjustStock: (item: InventoryItem) => void;
+  onDeactivateProduct: (item: InventoryItem) => void;
+}) {
+  return (
+    <article className="rounded-2xl border border-slate-200 bg-white p-4 transition-colors duration-150 hover:border-slate-300">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+            {item.sku}
+          </span>
+          <h4 className="mt-3 line-clamp-2 text-base font-semibold text-slate-950">{item.name}</h4>
+          <p className="mt-1 line-clamp-2 text-sm leading-5 text-slate-500">{item.description?.trim() || "No informado"}</p>
+        </div>
+        <InventoryStatusBadge status={item.stockStatus} />
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+        <MobileMetric label="Stock" value={item.totalQuantity.toLocaleString("es-CL")} helper={`Minimo ${item.minimumStock.toLocaleString("es-CL")}`} />
+        <MobileMetric label="Precio" value={currencyFormatter.format(item.unitPrice)} helper="Unitario" />
+        <MobileMetric label="Bodega" value={getWarehouseName(item)} helper={getWarehouseHelper(item)} />
+        <MobileMetric label="Actualizacion" value={formatDate(item.updatedAt)} />
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <ActionIconButton icon={Eye} label="Ver detalle" layout="full" onClick={() => onViewDetail(item)} />
+        <ActionIconButton icon={Pencil} label="Editar producto" layout="full" onClick={() => onEditProduct(item)} />
+        <ActionIconButton icon={SlidersHorizontal} label="Ajustar stock" layout="full" onClick={() => onAdjustStock(item)} />
+        <ActionIconButton
+          icon={Power}
+          label="Desactivar producto"
+          layout="full"
+          tone="danger"
+          onClick={() => onDeactivateProduct(item)}
+          disabled={!item.active}
+        />
+      </div>
+    </article>
+  );
+}
+
+function MobileMetric({ helper, label, value }: { helper?: string; label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="mt-1 truncate text-sm font-semibold text-slate-950" title={value}>
+        {value}
+      </p>
+      {helper ? <p className="mt-0.5 truncate text-xs text-slate-500">{helper}</p> : null}
+    </div>
   );
 }
 
@@ -197,6 +285,26 @@ function WarehouseCell({ item }: { item: InventoryItem }) {
   );
 }
 
+function getWarehouseName(item: InventoryItem): string {
+  if (item.warehouseStocks.length === 0) {
+    return "Sin bodega";
+  }
+
+  return item.warehouseStocks[0].warehouseName;
+}
+
+function getWarehouseHelper(item: InventoryItem): string {
+  if (item.warehouseStocks.length === 0) {
+    return "Sin disponibilidad";
+  }
+
+  if (item.warehouseStocks.length === 1) {
+    return item.warehouseStocks[0].warehouseCode;
+  }
+
+  return `${item.warehouseStocks.length} bodegas`;
+}
+
 function StockCell({ item }: { item: InventoryItem }) {
   return (
     <div className="inline-flex flex-col items-end gap-1">
@@ -219,15 +327,17 @@ function formatDate(value: string): string {
 }
 
 function ActionIconButton({
-  children,
   disabled,
+  icon: Icon,
   label,
+  layout = "icon",
   onClick,
   tone = "neutral"
 }: {
-  children: ReactNode;
   disabled?: boolean;
+  icon: LucideIcon;
   label: string;
+  layout?: "icon" | "full";
   onClick: () => void;
   tone?: "neutral" | "danger";
 }) {
@@ -236,14 +346,17 @@ function ActionIconButton({
       type="button"
       variant="secondary"
       className={cn(
-        "h-9 min-h-9 w-9 rounded-xl p-0 text-slate-700 shadow-sm hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-4",
-        tone === "danger" && "border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700 focus-visible:ring-red-600/15"
+        "rounded-xl border-slate-300 text-slate-700 !shadow-none hover:-translate-y-0 hover:border-slate-400 hover:bg-slate-50 hover:!shadow-none focus-visible:ring-4",
+        layout === "icon" ? "h-10 min-h-10 w-10 p-0" : "min-h-11 justify-start px-3 py-2 text-xs",
+        tone === "danger" && "border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700 focus-visible:ring-red-600/15",
+        disabled && "hover:bg-white"
       )}
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
     >
-      {children}
+      <Icon aria-hidden="true" absoluteStrokeWidth className="h-5 w-5 shrink-0" strokeWidth={2.5} />
+      {layout === "full" ? <span className="truncate">{label}</span> : null}
     </Button>
   );
 
