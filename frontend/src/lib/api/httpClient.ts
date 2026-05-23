@@ -19,6 +19,13 @@ type RequestOptions<TResponse> = {
 };
 
 const DEFAULT_TIMEOUT_MS = 10000;
+const unauthorizedEventName = "smartlogix:unauthorized";
+
+declare global {
+  interface WindowEventMap {
+    [unauthorizedEventName]: CustomEvent<void>;
+  }
+}
 
 async function request<TResponse>(
   method: HttpMethod,
@@ -41,6 +48,10 @@ async function request<TResponse>(
     const payload = await readResponsePayload(response);
 
     if (!response.ok) {
+      if (response.status === 401 && options.auth !== false) {
+        window.dispatchEvent(new CustomEvent(unauthorizedEventName));
+      }
+
       throw createHttpError({
         status: response.status,
         statusText: response.statusText,
@@ -127,4 +138,8 @@ export const httpClient = {
   put: <TResponse>(path: string, options?: RequestOptions<TResponse>) => request<TResponse>("PUT", path, options),
   patch: <TResponse>(path: string, options?: RequestOptions<TResponse>) => request<TResponse>("PATCH", path, options),
   delete: <TResponse>(path: string, options?: RequestOptions<TResponse>) => request<TResponse>("DELETE", path, options)
+};
+
+export const httpClientEvents = {
+  unauthorized: unauthorizedEventName
 };

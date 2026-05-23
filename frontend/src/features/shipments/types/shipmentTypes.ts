@@ -33,6 +33,7 @@ export type Shipment = {
   orderId: number;
   orderNumber: string;
   customerId: number;
+  customerName: string;
   carrier: ShipmentCarrier | null;
   status: ShipmentStatus;
   destinationAddress: string | null;

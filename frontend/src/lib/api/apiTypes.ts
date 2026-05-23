@@ -23,6 +23,10 @@ export type LoginRequest = {
   password: string;
 };
 
+export const AUTH_ROLES = ["ADMIN", "OPERATOR", "VIEWER"] as const;
+
+export type AuthRole = (typeof AUTH_ROLES)[number];
+
 export type LoginResponse = {
   accessToken: string;
   tokenType: string;
@@ -34,5 +38,5 @@ export type UserResponse = {
   id: number;
   email: string;
   fullName: string;
-  role: string;
+  role: AuthRole;
 };

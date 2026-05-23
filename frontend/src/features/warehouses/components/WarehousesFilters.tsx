@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { RefreshCw, RotateCcw, Search } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Warehouse, WarehouseFilters as WarehouseFiltersState } from "@/features/warehouses/types/warehouseTypes";
 import { cn } from "@/utils/cn";
@@ -70,7 +71,7 @@ export function WarehousesFilters({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button type="button" variant="secondary" className="min-h-12 flex-1 xl:flex-none" onClick={onRefresh} disabled={loading}>
-                <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                {loading ? <Spinner size="sm" label="Actualizando bodegas" /> : <RefreshCw className="h-4 w-4" aria-hidden="true" />}
                 Actualizar
               </Button>
             </TooltipTrigger>

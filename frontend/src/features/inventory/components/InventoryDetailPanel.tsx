@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Building2, CalendarClock, DollarSign, PackageCheck, Pencil, Power, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { DetailSkeleton } from "@/components/ui/detail-skeleton";
 import { Drawer } from "@/components/ui/Drawer";
 import { FormMessage } from "@/components/ui/FormMessage";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -12,6 +13,11 @@ type InventoryDetailPanelProps = {
   item: InventoryItem | null;
   loading: boolean;
   error?: string | null;
+  permissions: {
+    canEditProduct: boolean;
+    canAdjustStock: boolean;
+    canDeactivateProduct: boolean;
+  };
   onClose: () => void;
   onEditProduct: (item: InventoryItem) => void;
   onAdjustStock: (item: InventoryItem) => void;
@@ -33,6 +39,7 @@ export function InventoryDetailPanel({
   item,
   loading,
   error,
+  permissions,
   onClose,
   onEditProduct,
   onAdjustStock,
@@ -62,23 +69,29 @@ export function InventoryDetailPanel({
           <Button type="button" variant="secondary" onClick={onClose}>
             Cerrar
           </Button>
-          <Button type="button" variant="secondary" onClick={() => activeItem && onEditProduct(activeItem)} disabled={!activeItem || loading}>
-            <Pencil className="h-4 w-4" aria-hidden="true" />
-            Editar
-          </Button>
-          <Button type="button" onClick={() => activeItem && onAdjustStock(activeItem)} disabled={!activeItem || loading}>
-            <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
-            Ajustar stock
-          </Button>
-          <Button
-            type="button"
-            variant="danger"
-            onClick={() => activeItem && onDeactivateProduct(activeItem)}
-            disabled={!activeItem || loading || !activeItem.active}
-          >
-            <Power className="h-4 w-4" aria-hidden="true" />
-            Desactivar
-          </Button>
+          {permissions.canEditProduct ? (
+            <Button type="button" variant="secondary" onClick={() => activeItem && onEditProduct(activeItem)} disabled={!activeItem || loading}>
+              <Pencil className="h-4 w-4" aria-hidden="true" />
+              Editar
+            </Button>
+          ) : null}
+          {permissions.canAdjustStock ? (
+            <Button type="button" onClick={() => activeItem && onAdjustStock(activeItem)} disabled={!activeItem || loading}>
+              <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+              Ajustar stock
+            </Button>
+          ) : null}
+          {permissions.canDeactivateProduct ? (
+            <Button
+              type="button"
+              variant="danger"
+              onClick={() => activeItem && onDeactivateProduct(activeItem)}
+              disabled={!activeItem || loading || !activeItem.active}
+            >
+              <Power className="h-4 w-4" aria-hidden="true" />
+              Desactivar
+            </Button>
+          ) : null}
         </div>
       }
     >
@@ -216,16 +229,6 @@ function WarehouseMetric({ label, value, criticalWhenZero = false }: { label: st
       <div className="mt-1">
         <StatusBadge label={value.toLocaleString("es-CL")} tone={tone} />
       </div>
-    </div>
-  );
-}
-
-function DetailSkeleton() {
-  return (
-    <div className="space-y-4">
-      {Array.from({ length: 6 }).map((_, index) => (
-        <div key={index} className="h-20 animate-pulse rounded-2xl bg-slate-100" />
-      ))}
     </div>
   );
 }

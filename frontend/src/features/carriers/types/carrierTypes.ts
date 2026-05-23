@@ -33,6 +33,7 @@ export type ApiShipment = {
   orderId: number;
   orderNumber: string;
   customerId: number;
+  customerName: string;
   carrier: ApiCarrier | null;
   status: ShipmentStatus;
   destinationAddress: string | null;

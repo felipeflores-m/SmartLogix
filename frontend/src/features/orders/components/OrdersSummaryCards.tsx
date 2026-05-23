@@ -1,4 +1,5 @@
 import { AlertTriangle, CheckCircle2, Clock3, ClipboardList, PackageCheck, WalletCards } from "lucide-react";
+import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { InfoCard } from "@/components/ui/InfoCard";
 import type { OrderSummary } from "@/features/orders/types/orderTypes";
 
@@ -14,6 +15,10 @@ const currencyFormatter = new Intl.NumberFormat("es-CL", {
 });
 
 export function OrdersSummaryCards({ summary, loading }: OrdersSummaryCardsProps) {
+  if (loading) {
+    return <CardSkeleton count={6} columns={4} />;
+  }
+
   const cards = [
     {
       title: "Total de pedidos",

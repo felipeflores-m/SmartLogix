@@ -8,6 +8,7 @@ import { Navigate, createBrowserRouter } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { LoginPage } from "@/features/auth/pages/LoginPage";
+import { PAGE_PERMISSIONS } from "@/features/auth/permissions/permissions";
 import { CarriersPage } from "@/features/carriers/pages/CarriersPage";
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
 import { InventoryPage } from "@/features/inventory/pages/InventoryPage";
@@ -33,7 +34,7 @@ export const router = createBrowserRouter([
       {
         path: "/dashboard",
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute permission={PAGE_PERMISSIONS.dashboard}>
             <DashboardPage />
           </ProtectedRoute>
         )
@@ -41,7 +42,7 @@ export const router = createBrowserRouter([
       {
         path: "/inventario",
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute permission={PAGE_PERMISSIONS.inventory}>
             <InventoryPage />
           </ProtectedRoute>
         )
@@ -49,7 +50,7 @@ export const router = createBrowserRouter([
       {
         path: "/pedidos",
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute permission={PAGE_PERMISSIONS.orders}>
             <OrdersPage />
           </ProtectedRoute>
         )
@@ -57,7 +58,7 @@ export const router = createBrowserRouter([
       {
         path: "/envios",
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute permission={PAGE_PERMISSIONS.shipments}>
             <ShipmentsPage />
           </ProtectedRoute>
         )
@@ -65,7 +66,7 @@ export const router = createBrowserRouter([
       {
         path: "/transportistas",
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute permission={PAGE_PERMISSIONS.carriers}>
             <CarriersPage />
           </ProtectedRoute>
         )
@@ -73,7 +74,7 @@ export const router = createBrowserRouter([
       {
         path: "/bodegas",
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute permission={PAGE_PERMISSIONS.warehouses}>
             <WarehousesPage />
           </ProtectedRoute>
         )
@@ -81,7 +82,7 @@ export const router = createBrowserRouter([
       {
         path: "/reportes",
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute permission={PAGE_PERMISSIONS.reports}>
             <ReportsPage />
           </ProtectedRoute>
         )
@@ -89,7 +90,7 @@ export const router = createBrowserRouter([
       {
         path: "/configuracion",
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute permission={PAGE_PERMISSIONS.settings}>
             <PlaceholderPage
               title="Configuracion"
               description="Administra usuarios, roles y preferencias de operacion."

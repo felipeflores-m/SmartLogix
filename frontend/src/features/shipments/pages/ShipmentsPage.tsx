@@ -2,9 +2,13 @@ import { useState } from "react";
 import { RadioTower, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { useToast } from "@/components/ui/toastContext";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ACTION_FORBIDDEN_TOAST_MESSAGE } from "@/features/auth/permissions/permissions";
+import { usePermissions } from "@/features/auth/permissions/usePermissions";
 import { ShipmentDetailDrawer } from "@/features/shipments/components/ShipmentDetailDrawer";
 import { ShipmentEmptyState } from "@/features/shipments/components/ShipmentEmptyState";
 import { ShipmentErrorState } from "@/features/shipments/components/ShipmentErrorState";
@@ -22,16 +26,45 @@ export function ShipmentsPage() {
   const detail = useShipmentDetail();
   const { health, loading: statusLoading } = useBackendStatus();
   const toast = useToast();
+  const permissions = usePermissions();
   const [statusShipment, setStatusShipment] = useState<Shipment | null>(null);
   const [cancelShipment, setCancelShipment] = useState<Shipment | null>(null);
   const isBackendUp = health?.status === "UP";
 
   function handleViewDetail(shipment: Shipment) {
+    if (!permissions.can("shipments:view-detail")) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+      return;
+    }
+
     void detail.openShipment(shipment.id);
+  }
+
+  function handleRequestStatusChange(shipment: Shipment) {
+    if (!permissions.canUpdateShipmentStatus()) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+      return;
+    }
+
+    setStatusShipment(shipment);
+  }
+
+  function handleRequestCancel(shipment: Shipment) {
+    if (!permissions.canCancelShipment()) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+      return;
+    }
+
+    setCancelShipment(shipment);
   }
 
   async function handleUpdateStatus(input: { status: ShipmentStatus; comment?: string }) {
     if (!statusShipment) {
+      return;
+    }
+
+    if (!permissions.canUpdateShipmentStatus()) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
       return;
     }
 
@@ -47,6 +80,11 @@ export function ShipmentsPage() {
 
   async function handleCancelShipment() {
     if (!cancelShipment) {
+      return;
+    }
+
+    if (!permissions.canCancelShipment()) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
       return;
     }
 
@@ -85,8 +123,8 @@ export function ShipmentsPage() {
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button type="button" variant="secondary" onClick={() => void shipments.refresh()} disabled={shipments.loading}>
-                  <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                <Button type="button" variant="secondary" onClick={() => void shipments.refresh()} disabled={shipments.refreshing}>
+                  {shipments.refreshing ? <Spinner size="sm" label="Actualizando envios" /> : <RefreshCw className="h-4 w-4" aria-hidden="true" />}
                   Actualizar
                 </Button>
               </TooltipTrigger>
@@ -96,13 +134,13 @@ export function ShipmentsPage() {
         </div>
       </section>
 
-      <ShipmentsSummaryCards summary={shipments.summary} loading={shipments.loading} />
+      <ShipmentsSummaryCards summary={shipments.summary} loading={shipments.initialLoading} />
 
       <ShipmentsFilters
         filters={shipments.filters}
         shipments={shipments.shipments}
         carriers={shipments.carriers}
-        loading={shipments.loading}
+        loading={shipments.refreshing}
         searching={shipments.searching}
         hasActiveFilters={shipments.hasActiveFilters}
         onChange={shipments.updateFilters}
@@ -110,17 +148,24 @@ export function ShipmentsPage() {
         onRefresh={() => void shipments.refresh()}
       />
 
-      {shipments.error ? (
-        <ShipmentErrorState message={shipments.error} loading={shipments.loading} onRetry={() => void shipments.refresh()} />
+      {shipments.initialLoading ? (
+        <TableSkeleton rows={5} columns={8} />
+      ) : shipments.error ? (
+        <ShipmentErrorState message={shipments.error} loading={shipments.refreshing} onRetry={() => void shipments.refresh()} />
       ) : shipments.isEmpty || shipments.hasNoResults ? (
         <ShipmentEmptyState hasActiveFilters={shipments.hasActiveFilters} onResetFilters={shipments.resetFilters} />
       ) : (
         <ShipmentsTable
           shipments={shipments.filteredShipments}
-          loading={shipments.loading}
+          loading={false}
           onViewDetail={handleViewDetail}
-          onChangeStatus={setStatusShipment}
-          onCancel={setCancelShipment}
+          onChangeStatus={handleRequestStatusChange}
+          onCancel={handleRequestCancel}
+          permissions={{
+            canViewDetail: permissions.can("shipments:view-detail"),
+            canUpdateStatus: permissions.canUpdateShipmentStatus(),
+            canCancelShipment: permissions.canCancelShipment()
+          }}
         />
       )}
 
@@ -130,8 +175,12 @@ export function ShipmentsPage() {
         loading={detail.loading}
         error={detail.error}
         onClose={detail.closeShipment}
-        onChangeStatus={setStatusShipment}
-        onCancel={setCancelShipment}
+        onChangeStatus={handleRequestStatusChange}
+        onCancel={handleRequestCancel}
+        permissions={{
+          canUpdateStatus: permissions.canUpdateShipmentStatus(),
+          canCancelShipment: permissions.canCancelShipment()
+        }}
       />
 
       <ShipmentStatusModal

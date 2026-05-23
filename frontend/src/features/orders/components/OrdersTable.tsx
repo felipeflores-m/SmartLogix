@@ -8,12 +8,21 @@ import { cn } from "@/utils/cn";
 type OrdersTableProps = {
   orders: Order[];
   loading: boolean;
+  permissions: OrderActionPermissions;
   getAvailability: (order: Order) => OrderAvailability;
   getNextStatuses: (order: Order) => OrderStatus[];
   onViewDetail: (order: Order) => void;
   onConfirm: (order: Order) => void;
   onChangeStatus: (order: Order) => void;
   onCancel: (order: Order) => void;
+};
+
+type OrderActionPermissions = {
+  canViewDetail: boolean;
+  canValidateOrder: boolean;
+  canChangeStatus: boolean;
+  canCancelOrder: boolean;
+  canAssignCarrier: boolean;
 };
 
 const dateFormatter = new Intl.DateTimeFormat("es-CL", {
@@ -30,6 +39,7 @@ const currencyFormatter = new Intl.NumberFormat("es-CL", {
 export function OrdersTable({
   orders,
   loading,
+  permissions,
   getAvailability,
   getNextStatuses,
   onViewDetail,
@@ -61,6 +71,7 @@ export function OrdersTable({
               onConfirm={onConfirm}
               onChangeStatus={onChangeStatus}
               onCancel={onCancel}
+              permissions={permissions}
             />
           ))
         )}
@@ -99,6 +110,7 @@ export function OrdersTable({
                   onConfirm={onConfirm}
                   onChangeStatus={onChangeStatus}
                   onCancel={onCancel}
+                  permissions={permissions}
                 />
               ))
             )}
@@ -116,7 +128,8 @@ function OrdersTableRow({
   onViewDetail,
   onConfirm,
   onChangeStatus,
-  onCancel
+  onCancel,
+  permissions
 }: {
   order: Order;
   availability: OrderAvailability;
@@ -125,6 +138,7 @@ function OrdersTableRow({
   onConfirm: (order: Order) => void;
   onChangeStatus: (order: Order) => void;
   onCancel: (order: Order) => void;
+  permissions: OrderActionPermissions;
 }) {
   return (
     <tr className="group transition-colors duration-150 hover:bg-slate-50/90">
@@ -176,6 +190,7 @@ function OrdersTableRow({
           onConfirm={onConfirm}
           onChangeStatus={onChangeStatus}
           onCancel={onCancel}
+          permissions={permissions}
         />
       </TableCell>
     </tr>
@@ -189,7 +204,8 @@ function OrderMobileCard({
   onViewDetail,
   onConfirm,
   onChangeStatus,
-  onCancel
+  onCancel,
+  permissions
 }: {
   order: Order;
   availability: OrderAvailability;
@@ -198,6 +214,7 @@ function OrderMobileCard({
   onConfirm: (order: Order) => void;
   onChangeStatus: (order: Order) => void;
   onCancel: (order: Order) => void;
+  permissions: OrderActionPermissions;
 }) {
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-4 transition-colors duration-150 hover:border-slate-300">
@@ -234,6 +251,7 @@ function OrderMobileCard({
           onConfirm={onConfirm}
           onChangeStatus={onChangeStatus}
           onCancel={onCancel}
+          permissions={permissions}
         />
       </div>
     </article>

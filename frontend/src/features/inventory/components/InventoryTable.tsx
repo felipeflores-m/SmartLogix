@@ -9,10 +9,18 @@ import { cn } from "@/utils/cn";
 type InventoryTableProps = {
   items: InventoryItem[];
   loading: boolean;
+  permissions: InventoryActionPermissions;
   onViewDetail: (item: InventoryItem) => void;
   onEditProduct: (item: InventoryItem) => void;
   onAdjustStock: (item: InventoryItem) => void;
   onDeactivateProduct: (item: InventoryItem) => void;
+};
+
+type InventoryActionPermissions = {
+  canViewDetail: boolean;
+  canEditProduct: boolean;
+  canAdjustStock: boolean;
+  canDeactivateProduct: boolean;
 };
 
 const dateFormatter = new Intl.DateTimeFormat("es-CL", {
@@ -26,7 +34,7 @@ const currencyFormatter = new Intl.NumberFormat("es-CL", {
   maximumFractionDigits: 0
 });
 
-export function InventoryTable({ items, loading, onViewDetail, onEditProduct, onAdjustStock, onDeactivateProduct }: InventoryTableProps) {
+export function InventoryTable({ items, loading, onViewDetail, onEditProduct, onAdjustStock, onDeactivateProduct, permissions }: InventoryTableProps) {
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-panel transition-all duration-200 hover:border-slate-300 hover:shadow-md">
       <div className="flex flex-col gap-2 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -46,6 +54,7 @@ export function InventoryTable({ items, loading, onViewDetail, onEditProduct, on
             onEditProduct={onEditProduct}
             onAdjustStock={onAdjustStock}
             onDeactivateProduct={onDeactivateProduct}
+            permissions={permissions}
           />
         ))}
       </div>
@@ -78,6 +87,7 @@ export function InventoryTable({ items, loading, onViewDetail, onEditProduct, on
                   onEditProduct={onEditProduct}
                   onAdjustStock={onAdjustStock}
                   onDeactivateProduct={onDeactivateProduct}
+                  permissions={permissions}
                 />
               ))
             )}
@@ -93,13 +103,15 @@ function InventoryTableRow({
   onViewDetail,
   onEditProduct,
   onAdjustStock,
-  onDeactivateProduct
+  onDeactivateProduct,
+  permissions
 }: {
   item: InventoryItem;
   onViewDetail: (item: InventoryItem) => void;
   onEditProduct: (item: InventoryItem) => void;
   onAdjustStock: (item: InventoryItem) => void;
   onDeactivateProduct: (item: InventoryItem) => void;
+  permissions: InventoryActionPermissions;
 }) {
   return (
     <tr className="group transition-colors duration-150 hover:bg-slate-50/90">
@@ -135,10 +147,12 @@ function InventoryTableRow({
       </TableCell>
       <TableCell align="right" className="sticky right-0 z-10 border-l border-slate-100 bg-white pl-4 transition-colors group-hover:bg-slate-50/95">
         <div className="inline-flex min-w-[178px] justify-end gap-1.5">
-          <ActionIconButton icon={Eye} label="Ver detalle" onClick={() => onViewDetail(item)} />
-          <ActionIconButton icon={Pencil} label="Editar producto" onClick={() => onEditProduct(item)} />
-          <ActionIconButton icon={SlidersHorizontal} label="Ajustar stock" onClick={() => onAdjustStock(item)} />
-          <ActionIconButton icon={Power} label="Desactivar producto" tone="danger" onClick={() => onDeactivateProduct(item)} disabled={!item.active} />
+          {permissions.canViewDetail ? <ActionIconButton icon={Eye} label="Ver detalle" onClick={() => onViewDetail(item)} /> : null}
+          {permissions.canEditProduct ? <ActionIconButton icon={Pencil} label="Editar producto" onClick={() => onEditProduct(item)} /> : null}
+          {permissions.canAdjustStock ? <ActionIconButton icon={SlidersHorizontal} label="Ajustar stock" onClick={() => onAdjustStock(item)} /> : null}
+          {permissions.canDeactivateProduct ? (
+            <ActionIconButton icon={Power} label="Desactivar producto" tone="danger" onClick={() => onDeactivateProduct(item)} disabled={!item.active} />
+          ) : null}
         </div>
       </TableCell>
     </tr>
@@ -187,13 +201,15 @@ function InventoryMobileCard({
   onViewDetail,
   onEditProduct,
   onAdjustStock,
-  onDeactivateProduct
+  onDeactivateProduct,
+  permissions
 }: {
   item: InventoryItem;
   onViewDetail: (item: InventoryItem) => void;
   onEditProduct: (item: InventoryItem) => void;
   onAdjustStock: (item: InventoryItem) => void;
   onDeactivateProduct: (item: InventoryItem) => void;
+  permissions: InventoryActionPermissions;
 }) {
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-4 transition-colors duration-150 hover:border-slate-300">
@@ -216,17 +232,21 @@ function InventoryMobileCard({
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2">
-        <ActionIconButton icon={Eye} label="Ver detalle" layout="full" onClick={() => onViewDetail(item)} />
-        <ActionIconButton icon={Pencil} label="Editar producto" layout="full" onClick={() => onEditProduct(item)} />
-        <ActionIconButton icon={SlidersHorizontal} label="Ajustar stock" layout="full" onClick={() => onAdjustStock(item)} />
-        <ActionIconButton
-          icon={Power}
-          label="Desactivar producto"
-          layout="full"
-          tone="danger"
-          onClick={() => onDeactivateProduct(item)}
-          disabled={!item.active}
-        />
+        {permissions.canViewDetail ? <ActionIconButton icon={Eye} label="Ver detalle" layout="full" onClick={() => onViewDetail(item)} /> : null}
+        {permissions.canEditProduct ? <ActionIconButton icon={Pencil} label="Editar producto" layout="full" onClick={() => onEditProduct(item)} /> : null}
+        {permissions.canAdjustStock ? (
+          <ActionIconButton icon={SlidersHorizontal} label="Ajustar stock" layout="full" onClick={() => onAdjustStock(item)} />
+        ) : null}
+        {permissions.canDeactivateProduct ? (
+          <ActionIconButton
+            icon={Power}
+            label="Desactivar producto"
+            layout="full"
+            tone="danger"
+            onClick={() => onDeactivateProduct(item)}
+            disabled={!item.active}
+          />
+        ) : null}
       </div>
     </article>
   );

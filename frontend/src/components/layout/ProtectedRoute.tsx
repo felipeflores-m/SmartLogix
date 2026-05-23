@@ -1,22 +1,24 @@
 import type { PropsWithChildren } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { PageLoader } from "@/components/ui/page-loader";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { usePermissions } from "@/features/auth/permissions/usePermissions";
+import { AccessRestrictedPage } from "@/features/auth/pages/AccessRestrictedPage";
+import type { Permission } from "@/features/auth/permissions/permissions";
 
-export function ProtectedRoute({ children }: PropsWithChildren) {
+type ProtectedRouteProps = PropsWithChildren<{
+  permission?: Permission | readonly Permission[];
+  match?: "all" | "any";
+}>;
+
+export function ProtectedRoute({ children, match = "all", permission }: ProtectedRouteProps) {
   const location = useLocation();
   const { authUnavailable, checkSession, checkingSession, error, hasStoredToken, isAuthenticated } = useAuth();
+  const { can, canAll, canAny } = usePermissions();
 
   if (checkingSession) {
-    return (
-      <div className="flex min-h-[420px] items-center justify-center rounded-xl border border-slate-200 bg-white p-8 shadow-panel">
-        <div className="text-center">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-brand-600" />
-          <p className="mt-4 text-sm font-semibold text-slate-900">Validando sesion</p>
-          <p className="mt-1 text-sm text-slate-500">Confirmando credenciales con SmartLogix.</p>
-        </div>
-      </div>
-    );
+    return <PageLoader label="Verificando sesion..." description="Confirmando tu acceso al panel." />;
   }
 
   if (authUnavailable && hasStoredToken) {
@@ -38,6 +40,15 @@ export function ProtectedRoute({ children }: PropsWithChildren) {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+
+  if (permission) {
+    const permissions = Array.isArray(permission) ? permission : [permission];
+    const allowed = permissions.length === 1 ? can(permissions[0]) : match === "any" ? canAny(permissions) : canAll(permissions);
+
+    if (!allowed) {
+      return <AccessRestrictedPage />;
+    }
   }
 
   return <>{children}</>;

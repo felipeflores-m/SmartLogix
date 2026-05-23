@@ -1,5 +1,6 @@
 import { RefreshCw, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { ApiCarrier } from "@/features/carriers/types/carrierTypes";
 import type { WarehouseResponse } from "@/features/inventory/types/inventoryTypes";
@@ -121,7 +122,7 @@ export function ReportsFilters({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button type="button" variant="secondary" className="min-h-12 px-3" onClick={onRefresh} disabled={loading} aria-label="Actualizar reportes">
-                <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                {loading ? <Spinner size="sm" label="Actualizando reportes" /> : <RefreshCw className="h-4 w-4" aria-hidden="true" />}
               </Button>
             </TooltipTrigger>
             <TooltipContent>Actualizar reportes</TooltipContent>

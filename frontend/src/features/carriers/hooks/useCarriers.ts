@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { carriersApi } from "@/features/carriers/api/carriersApi";
 import {
   carrierToCarrier,
@@ -22,7 +22,9 @@ export function useCarriers() {
   const [apiCarriers, setApiCarriers] = useState<ApiCarrier[]>([]);
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [filters, setFilters] = useState<CarrierFilters>(DEFAULT_FILTERS);
-  const [loading, setLoading] = useState(true);
+  const loadedRef = useRef(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [referenceError, setReferenceError] = useState<string | null>(null);
@@ -37,7 +39,14 @@ export function useCarriers() {
   const searching = filters.query !== debouncedQuery;
 
   const loadCarriers = useCallback(async () => {
-    setLoading(true);
+    const isInitialLoad = !loadedRef.current;
+
+    if (isInitialLoad) {
+      setInitialLoading(true);
+    } else {
+      setRefreshing(true);
+    }
+
     setError(null);
     setReferenceError(null);
 
@@ -45,19 +54,28 @@ export function useCarriers() {
 
     if (carriersResult.status === "fulfilled") {
       setApiCarriers(carriersResult.value);
+      loadedRef.current = true;
     } else {
-      setApiCarriers([]);
-      setError(getSafeErrorMessage(carriersResult.reason));
+      if (isInitialLoad) {
+        setApiCarriers([]);
+        setError(getSafeErrorMessage(carriersResult.reason));
+      }
     }
 
     if (shipmentsResult.status === "fulfilled") {
       setShipments(shipmentsResult.value);
     } else {
-      setShipments([]);
-      setReferenceError(getSafeErrorMessage(shipmentsResult.reason));
+      if (isInitialLoad) {
+        setShipments([]);
+        setReferenceError(getSafeErrorMessage(shipmentsResult.reason));
+      }
     }
 
-    setLoading(false);
+    if (isInitialLoad) {
+      setInitialLoading(false);
+    } else {
+      setRefreshing(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -89,6 +107,8 @@ export function useCarriers() {
     [loadCarriers]
   );
 
+  const loading = initialLoading || refreshing;
+
   return {
     carriers,
     filteredCarriers,
@@ -97,12 +117,14 @@ export function useCarriers() {
     summary,
     serviceTypes,
     loading,
+    initialLoading,
+    refreshing,
     saving,
     searching,
     error,
     referenceError,
-    isEmpty: !loading && !error && carriers.length === 0,
-    hasNoResults: !loading && !error && carriers.length > 0 && filteredCarriers.length === 0,
+    isEmpty: !initialLoading && !error && carriers.length === 0,
+    hasNoResults: !initialLoading && !error && carriers.length > 0 && filteredCarriers.length === 0,
     hasActiveFilters,
     updateFilters,
     resetFilters,

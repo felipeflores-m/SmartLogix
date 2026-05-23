@@ -6,24 +6,30 @@ import { cn } from "@/utils/cn";
 
 type CarrierActionsProps = {
   carrier: Carrier;
+  permissions: {
+    canViewDetail: boolean;
+    canUpdateAvailability: boolean;
+  };
   layout?: "icon" | "full";
   onViewDetail: (carrier: Carrier) => void;
   onToggleAvailability: (carrier: Carrier) => void;
 };
 
-export function CarrierActions({ carrier, layout = "icon", onToggleAvailability, onViewDetail }: CarrierActionsProps) {
+export function CarrierActions({ carrier, layout = "icon", onToggleAvailability, onViewDetail, permissions }: CarrierActionsProps) {
   const availabilityLabel = carrier.simulatedAvailable ? "Marcar no disponible" : "Marcar disponible";
 
   return (
     <div className={cn(layout === "icon" ? "inline-flex min-w-[92px] justify-end gap-1.5" : "grid grid-cols-2 gap-2")}>
-      <ActionIconButton icon={Eye} label="Ver detalle" layout={layout} onClick={() => onViewDetail(carrier)} />
-      <ActionIconButton
-        icon={carrier.simulatedAvailable ? CircleOff : RadioTower}
-        label={availabilityLabel}
-        layout={layout}
-        tone={carrier.simulatedAvailable ? "warning" : "success"}
-        onClick={() => onToggleAvailability(carrier)}
-      />
+      {permissions.canViewDetail ? <ActionIconButton icon={Eye} label="Ver detalle" layout={layout} onClick={() => onViewDetail(carrier)} /> : null}
+      {permissions.canUpdateAvailability ? (
+        <ActionIconButton
+          icon={carrier.simulatedAvailable ? CircleOff : RadioTower}
+          label={availabilityLabel}
+          layout={layout}
+          tone={carrier.simulatedAvailable ? "warning" : "success"}
+          onClick={() => onToggleAvailability(carrier)}
+        />
+      ) : null}
     </div>
   );
 }

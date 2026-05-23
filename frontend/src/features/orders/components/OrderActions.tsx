@@ -8,6 +8,13 @@ type OrderActionsProps = {
   order: Order;
   availability: OrderAvailability;
   nextStatuses: OrderStatus[];
+  permissions: {
+    canViewDetail: boolean;
+    canValidateOrder: boolean;
+    canChangeStatus: boolean;
+    canCancelOrder: boolean;
+    canAssignCarrier: boolean;
+  };
   layout?: "icon" | "full";
   onViewDetail: (order: Order) => void;
   onConfirm: (order: Order) => void;
@@ -19,6 +26,7 @@ export function OrderActions({
   order,
   availability,
   nextStatuses,
+  permissions,
   layout = "icon",
   onViewDetail,
   onConfirm,
@@ -30,11 +38,12 @@ export function OrderActions({
   const canCancel = order.status === "CREATED" || order.status === "CONFIRMED";
   const canChangeStatus = nextStatuses.length > 0;
   const dispatchAction = nextStatuses.length === 1 && nextStatuses[0] === "SHIPPED";
+  const canRunDispatchAction = !dispatchAction || permissions.canAssignCarrier;
 
   return (
     <div className={cn(layout === "icon" ? "inline-flex min-w-[132px] justify-end gap-1.5" : "grid grid-cols-2 gap-2")}>
-      <ActionIconButton icon={Eye} label="Ver detalle" layout={layout} onClick={() => onViewDetail(order)} />
-      {order.status === "CREATED" ? (
+      {permissions.canViewDetail ? <ActionIconButton icon={Eye} label="Ver detalle" layout={layout} onClick={() => onViewDetail(order)} /> : null}
+      {permissions.canValidateOrder && order.status === "CREATED" ? (
         <ActionIconButton
           icon={CheckCircle2}
           label={confirmTooltip}
@@ -45,7 +54,7 @@ export function OrderActions({
           disabled={confirmDisabled}
         />
       ) : null}
-      {canChangeStatus ? (
+      {permissions.canChangeStatus && canChangeStatus && canRunDispatchAction ? (
         <ActionIconButton
           icon={dispatchAction ? Truck : GitBranch}
           label={dispatchAction ? "Marcar en despacho" : "Cambiar estado"}
@@ -53,7 +62,7 @@ export function OrderActions({
           onClick={() => onChangeStatus(order)}
         />
       ) : null}
-      {canCancel ? (
+      {permissions.canCancelOrder && canCancel ? (
         <ActionIconButton icon={XCircle} label="Cancelar pedido" layout={layout} tone="danger" onClick={() => onCancel(order)} />
       ) : null}
     </div>

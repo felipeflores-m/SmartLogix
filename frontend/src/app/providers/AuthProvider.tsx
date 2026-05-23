@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useMemo, useState, type PropsWithChildren } from "react";
 import { authApi } from "@/features/auth/api/authApi";
 import { AuthContext, type AuthSessionStatus } from "@/features/auth/hooks/AuthContext";
-import type { LoginRequest, UserResponse } from "@/lib/api/apiTypes";
+import type { LoginRequest } from "@/lib/api/apiTypes";
+import type { AuthUser } from "@/features/auth/types/authTypes";
 import { ApiClientError, getSafeErrorMessage } from "@/lib/api/apiErrors";
+import { httpClientEvents } from "@/lib/api/httpClient";
 import { authTokenProvider } from "@/lib/security/authTokenProvider";
+import { useToast } from "@/components/ui/toastContext";
 
 export function AuthProvider({ children }: PropsWithChildren) {
-  const [user, setUser] = useState<UserResponse | null>(null);
+  const toast = useToast();
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [status, setStatus] = useState<AuthSessionStatus>("checking");
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +33,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       setUser(null);
       setError(getSafeErrorMessage(sessionError));
 
-      if (sessionError instanceof ApiClientError && (sessionError.status === 401 || sessionError.status === 403)) {
+      if (sessionError instanceof ApiClientError && sessionError.status === 401) {
         authTokenProvider.clearToken();
         setStatus("anonymous");
         return;
@@ -42,6 +46,20 @@ export function AuthProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     void checkSession();
   }, [checkSession]);
+
+  useEffect(() => {
+    function handleUnauthorized() {
+      authTokenProvider.clearToken();
+      setUser(null);
+      setError("Tu sesión expiró. Inicia sesión nuevamente.");
+      setStatus("anonymous");
+      toast.error("Tu sesión expiró. Inicia sesión nuevamente.");
+    }
+
+    window.addEventListener(httpClientEvents.unauthorized, handleUnauthorized);
+
+    return () => window.removeEventListener(httpClientEvents.unauthorized, handleUnauthorized);
+  }, [toast]);
 
   const login = useCallback(async (credentials: LoginRequest) => {
     setActionLoading(true);

@@ -7,8 +7,14 @@ import { cn } from "@/utils/cn";
 type WarehousesTableProps = {
   warehouses: Warehouse[];
   loading: boolean;
+  permissions: WarehouseActionPermissions;
   onViewDetail: (warehouse: Warehouse) => void;
   onViewStock: (warehouse: Warehouse) => void;
+};
+
+type WarehouseActionPermissions = {
+  canViewDetail: boolean;
+  canViewStock: boolean;
 };
 
 const dateFormatter = new Intl.DateTimeFormat("es-CL", {
@@ -16,7 +22,7 @@ const dateFormatter = new Intl.DateTimeFormat("es-CL", {
   timeStyle: "short"
 });
 
-export function WarehousesTable({ loading, onViewDetail, onViewStock, warehouses }: WarehousesTableProps) {
+export function WarehousesTable({ loading, onViewDetail, onViewStock, permissions, warehouses }: WarehousesTableProps) {
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-panel transition-all duration-200 hover:border-slate-300 hover:shadow-md">
       <div className="flex flex-col gap-2 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -39,6 +45,7 @@ export function WarehousesTable({ loading, onViewDetail, onViewStock, warehouses
               warehouse={warehouse}
               onViewDetail={onViewDetail}
               onViewStock={onViewStock}
+              permissions={permissions}
             />
           ))
         )}
@@ -70,6 +77,7 @@ export function WarehousesTable({ loading, onViewDetail, onViewStock, warehouses
                   warehouse={warehouse}
                   onViewDetail={onViewDetail}
                   onViewStock={onViewStock}
+                  permissions={permissions}
                 />
               ))
             )}
@@ -83,11 +91,13 @@ export function WarehousesTable({ loading, onViewDetail, onViewStock, warehouses
 function WarehouseTableRow({
   onViewDetail,
   onViewStock,
+  permissions,
   warehouse
 }: {
   warehouse: Warehouse;
   onViewDetail: (warehouse: Warehouse) => void;
   onViewStock: (warehouse: Warehouse) => void;
+  permissions: WarehouseActionPermissions;
 }) {
   return (
     <tr className="group transition-colors duration-150 hover:bg-slate-50/90">
@@ -120,7 +130,7 @@ function WarehouseTableRow({
         <span className="whitespace-nowrap text-slate-600">{formatDate(warehouse.updatedAt)}</span>
       </TableCell>
       <TableCell align="right" className="sticky right-0 z-10 border-l border-slate-100 bg-white pl-4 transition-colors group-hover:bg-slate-50/95">
-        <WarehouseActions warehouse={warehouse} onViewDetail={onViewDetail} onViewStock={onViewStock} />
+        <WarehouseActions warehouse={warehouse} onViewDetail={onViewDetail} onViewStock={onViewStock} permissions={permissions} />
       </TableCell>
     </tr>
   );
@@ -129,11 +139,13 @@ function WarehouseTableRow({
 function WarehouseMobileCard({
   onViewDetail,
   onViewStock,
+  permissions,
   warehouse
 }: {
   warehouse: Warehouse;
   onViewDetail: (warehouse: Warehouse) => void;
   onViewStock: (warehouse: Warehouse) => void;
+  permissions: WarehouseActionPermissions;
 }) {
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-4 transition-colors duration-150 hover:border-slate-300">
@@ -156,7 +168,7 @@ function WarehouseMobileCard({
       </div>
 
       <div className="mt-4">
-        <WarehouseActions warehouse={warehouse} layout="full" onViewDetail={onViewDetail} onViewStock={onViewStock} />
+        <WarehouseActions warehouse={warehouse} layout="full" onViewDetail={onViewDetail} onViewStock={onViewStock} permissions={permissions} />
       </div>
     </article>
   );

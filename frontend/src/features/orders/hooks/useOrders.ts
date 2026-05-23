@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { carriersApi } from "@/features/carriers/api/carriersApi";
 import type { ApiShipment, Shipment } from "@/features/carriers/types/carrierTypes";
 import { inventoryApi } from "@/features/inventory/api/inventoryApi";
@@ -47,8 +47,11 @@ export function useOrders() {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [warehouses, setWarehouses] = useState<WarehouseResponse[]>([]);
   const [filters, setFilters] = useState<OrderFilters>(DEFAULT_FILTERS);
-  const [loading, setLoading] = useState(true);
+  const loadedRef = useRef(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [dispatching, setDispatching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [referenceError, setReferenceError] = useState<string | null>(null);
   const debouncedQuery = useDebouncedValue(filters.query, 400);
@@ -64,7 +67,14 @@ export function useOrders() {
   const searching = filters.query !== debouncedQuery;
 
   const loadOrders = useCallback(async () => {
-    setLoading(true);
+    const isInitialLoad = !loadedRef.current;
+
+    if (isInitialLoad) {
+      setInitialLoading(true);
+    } else {
+      setRefreshing(true);
+    }
+
     setError(null);
     setReferenceError(null);
 
@@ -76,25 +86,32 @@ export function useOrders() {
 
     if (ordersResult.status === "fulfilled") {
       setApiOrders(ordersResult.value);
+      loadedRef.current = true;
     } else {
-      setApiOrders([]);
-      setError(getSafeErrorMessage(ordersResult.reason));
+      if (isInitialLoad) {
+        setApiOrders([]);
+        setError(getSafeErrorMessage(ordersResult.reason));
+      }
     }
 
     if (customersResult.status === "fulfilled") {
       setCustomers(customersResult.value);
     } else {
-      setCustomers([]);
-      setReferenceError(getSafeErrorMessage(customersResult.reason));
+      if (isInitialLoad) {
+        setCustomers([]);
+        setReferenceError(getSafeErrorMessage(customersResult.reason));
+      }
     }
 
     if (inventoryResult.status === "fulfilled") {
       setInventoryItems(inventoryResult.value.items);
       setWarehouses(inventoryResult.value.warehouses);
     } else {
-      setInventoryItems([]);
-      setWarehouses([]);
-      setReferenceError((current) => current ?? getSafeErrorMessage(inventoryResult.reason));
+      if (isInitialLoad) {
+        setInventoryItems([]);
+        setWarehouses([]);
+        setReferenceError((current) => current ?? getSafeErrorMessage(inventoryResult.reason));
+      }
     }
 
     const shipmentsResult = await carriersApi.getShipments().catch((shipmentError: unknown) => shipmentError);
@@ -102,11 +119,17 @@ export function useOrders() {
     if (Array.isArray(shipmentsResult)) {
       setShipments(shipmentsResult);
     } else {
-      setShipments([]);
-      setReferenceError((current) => current ?? getSafeErrorMessage(shipmentsResult));
+      if (isInitialLoad) {
+        setShipments([]);
+        setReferenceError((current) => current ?? getSafeErrorMessage(shipmentsResult));
+      }
     }
 
-    setLoading(false);
+    if (isInitialLoad) {
+      setInitialLoading(false);
+    } else {
+      setRefreshing(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -124,6 +147,7 @@ export function useOrders() {
   const registerOrder = useCallback(
     async (input: RegisterOrderInput) => {
       setSaving(true);
+      setDispatching(true);
       setError(null);
 
       try {
@@ -239,10 +263,13 @@ export function useOrders() {
         throw new Error(safeMessage);
       } finally {
         setSaving(false);
+        setDispatching(false);
       }
     },
     [loadOrders]
   );
+
+  const loading = initialLoading || refreshing;
 
   return {
     orders,
@@ -255,12 +282,15 @@ export function useOrders() {
     summary,
     normalizerContext,
     loading,
+    initialLoading,
+    refreshing,
     saving,
+    dispatching,
     searching,
     error,
     referenceError,
-    isEmpty: !loading && !error && orders.length === 0,
-    hasNoResults: !loading && !error && orders.length > 0 && filteredOrders.length === 0,
+    isEmpty: !initialLoading && !error && orders.length === 0,
+    hasNoResults: !initialLoading && !error && orders.length > 0 && filteredOrders.length === 0,
     hasActiveFilters,
     updateFilters,
     resetFilters,

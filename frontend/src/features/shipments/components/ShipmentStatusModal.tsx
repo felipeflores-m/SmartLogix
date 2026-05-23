@@ -3,6 +3,7 @@ import { GitBranch } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { FormMessage } from "@/components/ui/FormMessage";
 import { Modal } from "@/components/ui/Modal";
+import { Spinner } from "@/components/ui/spinner";
 import {
   getShipmentNextStatuses,
   getShipmentStatusLabel,
@@ -64,6 +65,7 @@ export function ShipmentStatusModal({ loading, onClose, onConfirm, shipment }: S
             Cancelar
           </Button>
           <Button type="button" onClick={handleSubmit} disabled={loading || !selectedStatus}>
+            {loading ? <Spinner size="sm" label="Guardando estado" className="text-current" /> : null}
             {loading ? "Guardando..." : "Guardar estado"}
           </Button>
         </div>

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { FormMessage } from "@/components/ui/FormMessage";
 import { Modal } from "@/components/ui/Modal";
 import { TextInput } from "@/components/ui/TextInput";
+import { Spinner } from "@/components/ui/spinner";
 import type { InventoryItem, WarehouseResponse } from "@/features/inventory/types/inventoryTypes";
 import { OrderItemsEditor } from "@/features/orders/components/OrderItemsEditor";
 import { SearchableCombobox, type SearchableComboboxOption } from "@/components/ui/SearchableCombobox";
@@ -106,6 +107,7 @@ export function OrderFormModal({ customers, inventoryItems, open, saving, wareho
             Cancelar
           </Button>
           <Button type="submit" form={formId} disabled={saving}>
+            {saving ? <Spinner size="sm" label="Registrando pedido" className="text-current" /> : null}
             {saving ? "Registrando..." : "Registrar pedido"}
           </Button>
         </div>

@@ -1,9 +1,15 @@
+import { useState } from "react";
 import { Download, RadioTower, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { ChartSkeleton } from "@/components/ui/chart-skeleton";
 import { FormMessage } from "@/components/ui/FormMessage";
+import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { useToast } from "@/components/ui/toastContext";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ACTION_FORBIDDEN_TOAST_MESSAGE } from "@/features/auth/permissions/permissions";
+import { usePermissions } from "@/features/auth/permissions/usePermissions";
 import { CarriersReportSection } from "@/features/reports/components/CarriersReportSection";
 import { InventoryReportSection } from "@/features/reports/components/InventoryReportSection";
 import { OrdersReportSection } from "@/features/reports/components/OrdersReportSection";
@@ -22,21 +28,36 @@ export function ReportsPage() {
   const reports = useReports();
   const { health, loading: statusLoading } = useBackendStatus();
   const toast = useToast();
+  const permissions = usePermissions();
+  const [exporting, setExporting] = useState(false);
   const isBackendUp = health?.status === "UP";
-  const canExport = !reports.loading && !reports.error && reports.data.csvRows.length > 0 && !reports.isEmpty && !reports.hasNoResults;
+  const hasExportData = !reports.initialLoading && !reports.error && reports.data.csvRows.length > 0 && !reports.isEmpty && !reports.hasNoResults;
+  const canExport = permissions.canExportReports() && hasExportData && !exporting;
 
   function shouldShowSection(section: Exclude<ReportType, "general">): boolean {
     return reports.filters.reportType === "general" || reports.filters.reportType === section;
   }
 
   function handleExportCsv() {
+    if (!permissions.canExportReports()) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+      return;
+    }
+
     if (!canExport) {
       toast.error("No hay informacion disponible para exportar.");
       return;
     }
 
-    exportCsv(reports.data.csvRows);
-    toast.success("Reporte exportado correctamente.");
+    setExporting(true);
+    window.setTimeout(() => {
+      try {
+        exportCsv(reports.data.csvRows);
+        toast.success("Reporte exportado correctamente.");
+      } finally {
+        setExporting(false);
+      }
+    }, 0);
   }
 
   return (
@@ -64,35 +85,37 @@ export function ReportsPage() {
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button type="button" variant="secondary" onClick={() => void reports.refresh()} disabled={reports.loading}>
-                  <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                <Button type="button" variant="secondary" onClick={() => void reports.refresh()} disabled={reports.refreshing}>
+                  {reports.refreshing ? <Spinner size="sm" label="Actualizando reportes" /> : <RefreshCw className="h-4 w-4" aria-hidden="true" />}
                   Actualizar
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Actualizar reportes</TooltipContent>
             </Tooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button type="button" onClick={handleExportCsv} disabled={!canExport}>
-                  <Download className="h-4 w-4" aria-hidden="true" />
-                  Exportar CSV
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Exportar datos visibles</TooltipContent>
-            </Tooltip>
+            {permissions.canExportReports() ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button type="button" onClick={handleExportCsv} disabled={!canExport}>
+                    {exporting ? <Spinner size="sm" label="Exportando reporte" className="text-current" /> : <Download className="h-4 w-4" aria-hidden="true" />}
+                    {exporting ? "Exportando..." : "Exportar CSV"}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Exportar datos visibles</TooltipContent>
+              </Tooltip>
+            ) : null}
           </div>
         </div>
       </section>
 
-      <ReportsSummaryCards summary={reports.data.summary} loading={reports.loading} />
+      <ReportsSummaryCards summary={reports.data.summary} loading={reports.initialLoading} />
 
       <ReportsFilters
         filters={reports.filters}
         warehouses={reports.warehouses}
         carriers={reports.carriers}
         statusOptions={reports.statusOptions}
-        loading={reports.loading}
+        loading={reports.refreshing}
         hasActiveFilters={reports.hasActiveFilters}
         onChange={reports.updateFilters}
         onReset={reports.resetFilters}
@@ -103,8 +126,10 @@ export function ReportsPage() {
         <FormMessage tone="info">Algunos indicadores pueden estar temporalmente sin informacion.</FormMessage>
       ) : null}
 
-      {reports.error ? (
-        <ReportErrorState message={reports.error} loading={reports.loading} onRetry={() => void reports.refresh()} />
+      {reports.initialLoading ? (
+        <ReportsInitialSkeleton />
+      ) : reports.error ? (
+        <ReportErrorState message={reports.error} loading={reports.refreshing} onRetry={() => void reports.refresh()} />
       ) : reports.isEmpty || reports.hasNoResults ? (
         <ReportEmptyState hasActiveFilters={reports.hasActiveFilters} onResetFilters={reports.resetFilters} />
       ) : (
@@ -117,6 +142,18 @@ export function ReportsPage() {
           {shouldShowSection("warehouses") ? <WarehousesReportSection report={reports.data.warehouses} /> : null}
         </div>
       )}
+    </div>
+  );
+}
+
+function ReportsInitialSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-5 xl:grid-cols-2">
+        <ChartSkeleton />
+        <ChartSkeleton />
+      </div>
+      <TableSkeleton rows={5} columns={5} />
     </div>
   );
 }

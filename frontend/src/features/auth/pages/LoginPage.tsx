@@ -2,6 +2,8 @@ import { useState, type FormEvent } from "react";
 import { ArrowRight, BarChart3, Boxes, ClipboardList, LockKeyhole, Mail, ShieldCheck, Truck } from "lucide-react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { PageLoader } from "@/components/ui/page-loader";
+import { Spinner } from "@/components/ui/spinner";
 import { TextInput } from "@/components/ui/TextInput";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { getSafeErrorMessage } from "@/lib/api/apiErrors";
@@ -32,6 +34,10 @@ export function LoginPage() {
 
   if (isAuthenticated) {
     return <Navigate to={from} replace />;
+  }
+
+  if (checkingSession) {
+    return <PageLoader label="Verificando sesion..." description="Preparando el acceso al panel." />;
   }
 
   function validateForm(): LoginFormErrors {
@@ -121,12 +127,6 @@ export function LoginPage() {
                 <p className="mt-2 text-sm text-slate-600">Ingresa tus credenciales para continuar.</p>
               </div>
 
-              {checkingSession ? (
-                <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">
-                  Verificando sesion...
-                </div>
-              ) : null}
-
               <form className="mt-6 space-y-4" onSubmit={handleSubmit} noValidate>
                 <TextInput
                   label="Correo electronico"
@@ -158,6 +158,7 @@ export function LoginPage() {
                 ) : null}
 
                 <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? <Spinner size="sm" label="Validando credenciales" className="text-current" /> : null}
                   {loading ? "Validando..." : "Iniciar sesion"}
                   {!loading ? <ArrowRight className="h-4 w-4" aria-hidden="true" /> : null}
                 </Button>

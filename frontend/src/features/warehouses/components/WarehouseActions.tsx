@@ -6,16 +6,20 @@ import { cn } from "@/utils/cn";
 
 type WarehouseActionsProps = {
   warehouse: Warehouse;
+  permissions: {
+    canViewDetail: boolean;
+    canViewStock: boolean;
+  };
   layout?: "icon" | "full";
   onViewDetail: (warehouse: Warehouse) => void;
   onViewStock: (warehouse: Warehouse) => void;
 };
 
-export function WarehouseActions({ layout = "icon", onViewDetail, onViewStock, warehouse }: WarehouseActionsProps) {
+export function WarehouseActions({ layout = "icon", onViewDetail, onViewStock, permissions, warehouse }: WarehouseActionsProps) {
   return (
     <div className={cn(layout === "icon" ? "inline-flex min-w-[88px] justify-end gap-1.5" : "grid grid-cols-2 gap-2")}>
-      <ActionIconButton icon={Eye} label="Ver detalle" layout={layout} onClick={() => onViewDetail(warehouse)} />
-      <ActionIconButton icon={PackageSearch} label="Ver stock" layout={layout} onClick={() => onViewStock(warehouse)} />
+      {permissions.canViewDetail ? <ActionIconButton icon={Eye} label="Ver detalle" layout={layout} onClick={() => onViewDetail(warehouse)} /> : null}
+      {permissions.canViewStock ? <ActionIconButton icon={PackageSearch} label="Ver stock" layout={layout} onClick={() => onViewStock(warehouse)} /> : null}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { FormMessage } from "@/components/ui/FormMessage";
 import { Modal } from "@/components/ui/Modal";
 import { SearchableCombobox, type SearchableComboboxOption } from "@/components/ui/SearchableCombobox";
+import { Spinner } from "@/components/ui/spinner";
 import type { Carrier } from "@/features/carriers/types/carrierTypes";
 import type { DispatchOrderInput } from "@/features/orders/hooks/useOrders";
 import type { Order } from "@/features/orders/types/orderTypes";
@@ -74,7 +75,7 @@ export function OrderAssignCarrierModal({ carriers, loading, onClose, onConfirm,
             Cancelar
           </Button>
           <Button type="button" onClick={handleSubmit} disabled={loading || !hasAvailableCarriers || !carrierCode}>
-            <Truck className="h-4 w-4" aria-hidden="true" />
+            {loading ? <Spinner size="sm" label="Procesando despacho" className="text-current" /> : <Truck className="h-4 w-4" aria-hidden="true" />}
             {loading ? "Procesando..." : "Marcar en despacho"}
           </Button>
         </div>

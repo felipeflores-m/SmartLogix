@@ -1,9 +1,13 @@
 import { RadioTower, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { FormMessage } from "@/components/ui/FormMessage";
+import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { useToast } from "@/components/ui/toastContext";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ACTION_FORBIDDEN_TOAST_MESSAGE } from "@/features/auth/permissions/permissions";
+import { usePermissions } from "@/features/auth/permissions/usePermissions";
 import { CarrierConfirmDialog } from "@/features/carriers/components/CarrierConfirmDialog";
 import { CarrierDetailDrawer } from "@/features/carriers/components/CarrierDetailDrawer";
 import { CarrierEmptyState } from "@/features/carriers/components/CarrierEmptyState";
@@ -22,15 +26,35 @@ export function CarriersPage() {
   const detail = useCarrierDetail();
   const { health, loading: statusLoading } = useBackendStatus();
   const toast = useToast();
+  const permissions = usePermissions();
   const [availabilityCarrier, setAvailabilityCarrier] = useState<Carrier | null>(null);
   const isBackendUp = health?.status === "UP";
 
   function handleViewDetail(carrier: Carrier) {
+    if (!permissions.can("carriers:view-detail")) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+      return;
+    }
+
     void detail.openCarrier(carrier.id);
+  }
+
+  function handleRequestAvailabilityChange(carrier: Carrier) {
+    if (!permissions.canUpdateCarrierAvailability()) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+      return;
+    }
+
+    setAvailabilityCarrier(carrier);
   }
 
   async function handleToggleAvailability() {
     if (!availabilityCarrier) {
+      return;
+    }
+
+    if (!permissions.canUpdateCarrierAvailability()) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
       return;
     }
 
@@ -70,8 +94,8 @@ export function CarriersPage() {
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button type="button" variant="secondary" onClick={() => void carriers.refresh()} disabled={carriers.loading}>
-                  <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                <Button type="button" variant="secondary" onClick={() => void carriers.refresh()} disabled={carriers.refreshing}>
+                  {carriers.refreshing ? <Spinner size="sm" label="Actualizando transportistas" /> : <RefreshCw className="h-4 w-4" aria-hidden="true" />}
                   Actualizar
                 </Button>
               </TooltipTrigger>
@@ -81,7 +105,7 @@ export function CarriersPage() {
         </div>
       </section>
 
-      <CarriersSummaryCards summary={carriers.summary} loading={carriers.loading} />
+      <CarriersSummaryCards summary={carriers.summary} loading={carriers.initialLoading} />
 
       {carriers.referenceError && !carriers.error ? (
         <FormMessage tone="info" title="Informacion parcial">
@@ -93,7 +117,7 @@ export function CarriersPage() {
         filters={carriers.filters}
         carriers={carriers.carriers}
         serviceTypes={carriers.serviceTypes}
-        loading={carriers.loading}
+        loading={carriers.refreshing}
         searching={carriers.searching}
         hasActiveFilters={carriers.hasActiveFilters}
         onChange={carriers.updateFilters}
@@ -101,16 +125,22 @@ export function CarriersPage() {
         onRefresh={() => void carriers.refresh()}
       />
 
-      {carriers.error ? (
-        <CarrierErrorState message={carriers.error} loading={carriers.loading} onRetry={() => void carriers.refresh()} />
+      {carriers.initialLoading ? (
+        <TableSkeleton rows={5} columns={7} />
+      ) : carriers.error ? (
+        <CarrierErrorState message={carriers.error} loading={carriers.refreshing} onRetry={() => void carriers.refresh()} />
       ) : carriers.isEmpty || carriers.hasNoResults ? (
         <CarrierEmptyState hasActiveFilters={carriers.hasActiveFilters} onResetFilters={carriers.resetFilters} />
       ) : (
         <CarriersTable
           carriers={carriers.filteredCarriers}
-          loading={carriers.loading}
+          loading={false}
           onViewDetail={handleViewDetail}
-          onToggleAvailability={setAvailabilityCarrier}
+          onToggleAvailability={handleRequestAvailabilityChange}
+          permissions={{
+            canViewDetail: permissions.can("carriers:view-detail"),
+            canUpdateAvailability: permissions.canUpdateCarrierAvailability()
+          }}
         />
       )}
 
@@ -121,7 +151,10 @@ export function CarriersPage() {
         loading={detail.loading}
         error={detail.error}
         onClose={detail.closeCarrier}
-        onToggleAvailability={setAvailabilityCarrier}
+        onToggleAvailability={handleRequestAvailabilityChange}
+        permissions={{
+          canUpdateAvailability: permissions.canUpdateCarrierAvailability()
+        }}
       />
 
       <CarrierConfirmDialog

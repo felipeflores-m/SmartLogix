@@ -1,4 +1,5 @@
 import { AlertTriangle, CheckCircle2, Clock3, PackageCheck, RadioTower, Truck } from "lucide-react";
+import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { InfoCard } from "@/components/ui/InfoCard";
 import type { ShipmentSummary } from "@/features/shipments/types/shipmentTypes";
 
@@ -8,6 +9,10 @@ type ShipmentsSummaryCardsProps = {
 };
 
 export function ShipmentsSummaryCards({ loading, summary }: ShipmentsSummaryCardsProps) {
+  if (loading) {
+    return <CardSkeleton count={6} columns={4} />;
+  }
+
   const cards = [
     {
       title: "Total de envios",

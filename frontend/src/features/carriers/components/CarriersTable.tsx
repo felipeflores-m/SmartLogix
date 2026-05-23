@@ -8,8 +8,14 @@ import { cn } from "@/utils/cn";
 type CarriersTableProps = {
   carriers: Carrier[];
   loading: boolean;
+  permissions: CarrierActionPermissions;
   onViewDetail: (carrier: Carrier) => void;
   onToggleAvailability: (carrier: Carrier) => void;
+};
+
+type CarrierActionPermissions = {
+  canViewDetail: boolean;
+  canUpdateAvailability: boolean;
 };
 
 const dateFormatter = new Intl.DateTimeFormat("es-CL", {
@@ -17,7 +23,7 @@ const dateFormatter = new Intl.DateTimeFormat("es-CL", {
   timeStyle: "short"
 });
 
-export function CarriersTable({ carriers, loading, onToggleAvailability, onViewDetail }: CarriersTableProps) {
+export function CarriersTable({ carriers, loading, onToggleAvailability, onViewDetail, permissions }: CarriersTableProps) {
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-panel transition-all duration-200 hover:border-slate-300 hover:shadow-md">
       <div className="flex flex-col gap-2 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -38,6 +44,7 @@ export function CarriersTable({ carriers, loading, onToggleAvailability, onViewD
               carrier={carrier}
               onViewDetail={onViewDetail}
               onToggleAvailability={onToggleAvailability}
+              permissions={permissions}
             />
           ))
         )}
@@ -69,6 +76,7 @@ export function CarriersTable({ carriers, loading, onToggleAvailability, onViewD
                   carrier={carrier}
                   onViewDetail={onViewDetail}
                   onToggleAvailability={onToggleAvailability}
+                  permissions={permissions}
                 />
               ))
             )}
@@ -82,11 +90,13 @@ export function CarriersTable({ carriers, loading, onToggleAvailability, onViewD
 function CarrierTableRow({
   carrier,
   onToggleAvailability,
-  onViewDetail
+  onViewDetail,
+  permissions
 }: {
   carrier: Carrier;
   onViewDetail: (carrier: Carrier) => void;
   onToggleAvailability: (carrier: Carrier) => void;
+  permissions: CarrierActionPermissions;
 }) {
   const latestShipment = carrier.assignedShipments.at(-1) ?? null;
 
@@ -129,7 +139,7 @@ function CarrierTableRow({
         <span className="whitespace-nowrap text-slate-600">{formatDate(carrier.updatedAt)}</span>
       </TableCell>
       <TableCell align="right" className="sticky right-0 z-10 border-l border-slate-100 bg-white pl-4 transition-colors group-hover:bg-slate-50/95">
-        <CarrierActions carrier={carrier} onViewDetail={onViewDetail} onToggleAvailability={onToggleAvailability} />
+        <CarrierActions carrier={carrier} onViewDetail={onViewDetail} onToggleAvailability={onToggleAvailability} permissions={permissions} />
       </TableCell>
     </tr>
   );
@@ -138,11 +148,13 @@ function CarrierTableRow({
 function CarrierMobileCard({
   carrier,
   onToggleAvailability,
-  onViewDetail
+  onViewDetail,
+  permissions
 }: {
   carrier: Carrier;
   onViewDetail: (carrier: Carrier) => void;
   onToggleAvailability: (carrier: Carrier) => void;
+  permissions: CarrierActionPermissions;
 }) {
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-4 transition-colors duration-150 hover:border-slate-300">
@@ -163,7 +175,7 @@ function CarrierMobileCard({
       </div>
 
       <div className="mt-4">
-        <CarrierActions carrier={carrier} layout="full" onViewDetail={onViewDetail} onToggleAvailability={onToggleAvailability} />
+        <CarrierActions carrier={carrier} layout="full" onViewDetail={onViewDetail} onToggleAvailability={onToggleAvailability} permissions={permissions} />
       </div>
     </article>
   );

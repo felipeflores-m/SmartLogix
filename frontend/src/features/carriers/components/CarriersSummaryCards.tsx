@@ -1,4 +1,5 @@
 import { AlertTriangle, PackageCheck, PauseCircle, RadioTower, Truck, Waypoints } from "lucide-react";
+import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { InfoCard } from "@/components/ui/InfoCard";
 import type { CarrierSummary } from "@/features/carriers/types/carrierTypes";
 
@@ -8,6 +9,10 @@ type CarriersSummaryCardsProps = {
 };
 
 export function CarriersSummaryCards({ summary, loading }: CarriersSummaryCardsProps) {
+  if (loading) {
+    return <CardSkeleton count={6} columns={4} />;
+  }
+
   const cards = [
     {
       title: "Transportistas",

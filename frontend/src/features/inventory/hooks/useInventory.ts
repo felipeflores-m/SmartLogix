@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { inventoryApi } from "@/features/inventory/api/inventoryApi";
 import type {
   CreateProductWithInitialStockRequest,
@@ -23,25 +23,41 @@ export function useInventory() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [warehouses, setWarehouses] = useState<WarehouseResponse[]>([]);
   const [filters, setFilters] = useState<InventoryFilters>(DEFAULT_FILTERS);
-  const [loading, setLoading] = useState(true);
+  const loadedRef = useRef(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const debouncedQuery = useDebouncedValue(filters.query, 400);
 
   const loadInventory = useCallback(async () => {
-    setLoading(true);
+    const isInitialLoad = !loadedRef.current;
+
+    if (isInitialLoad) {
+      setInitialLoading(true);
+    } else {
+      setRefreshing(true);
+    }
+
     setError(null);
 
     try {
       const response = await inventoryApi.getInventory();
       setItems(response.items);
       setWarehouses(response.warehouses);
+      loadedRef.current = true;
     } catch (loadError) {
-      setError(getSafeErrorMessage(loadError));
-      setItems([]);
-      setWarehouses([]);
+      if (isInitialLoad) {
+        setError(getSafeErrorMessage(loadError));
+        setItems([]);
+        setWarehouses([]);
+      }
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setInitialLoading(false);
+      } else {
+        setRefreshing(false);
+      }
     }
   }, []);
 
@@ -169,6 +185,8 @@ export function useInventory() {
 
   const getItemDetail = useCallback(async (productId: number) => inventoryApi.getInventoryItemById(productId), []);
 
+  const loading = initialLoading || refreshing;
+
   return {
     items,
     filteredItems,
@@ -176,11 +194,13 @@ export function useInventory() {
     filters,
     summary,
     loading,
+    initialLoading,
+    refreshing,
     saving,
     searching,
     error,
-    isEmpty: !loading && !error && items.length === 0,
-    hasNoResults: !loading && !error && items.length > 0 && filteredItems.length === 0,
+    isEmpty: !initialLoading && !error && items.length === 0,
+    hasNoResults: !initialLoading && !error && items.length > 0 && filteredItems.length === 0,
     hasActiveFilters,
     updateFilters,
     resetFilters,

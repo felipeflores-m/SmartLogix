@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Boxes, CalendarClock, Hash, MapPin, PackageSearch, Warehouse as WarehouseIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { DetailSkeleton } from "@/components/ui/detail-skeleton";
 import { Drawer } from "@/components/ui/Drawer";
 import { FormMessage } from "@/components/ui/FormMessage";
 import { WarehouseMovementsTable } from "@/features/warehouses/components/WarehouseMovementsTable";
@@ -139,16 +140,6 @@ function DetailMetric({
       <p className="mt-2 truncate text-base font-semibold text-slate-950" title={value}>
         {value || "No informado"}
       </p>
-    </div>
-  );
-}
-
-function DetailSkeleton() {
-  return (
-    <div className="space-y-4">
-      {Array.from({ length: 6 }).map((_, index) => (
-        <div key={index} className="h-20 animate-pulse rounded-2xl bg-slate-100" />
-      ))}
     </div>
   );
 }

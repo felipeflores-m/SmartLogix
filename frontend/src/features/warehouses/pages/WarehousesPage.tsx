@@ -1,9 +1,13 @@
 import { useState } from "react";
 import { Plus, RadioTower, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { useToast } from "@/components/ui/toastContext";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ACTION_FORBIDDEN_TOAST_MESSAGE } from "@/features/auth/permissions/permissions";
+import { usePermissions } from "@/features/auth/permissions/usePermissions";
 import { WarehouseDetailDrawer } from "@/features/warehouses/components/WarehouseDetailDrawer";
 import { WarehouseEmptyState } from "@/features/warehouses/components/WarehouseEmptyState";
 import { WarehouseErrorState } from "@/features/warehouses/components/WarehouseErrorState";
@@ -21,14 +25,34 @@ export function WarehousesPage() {
   const detail = useWarehouseDetail();
   const { health, loading: statusLoading } = useBackendStatus();
   const toast = useToast();
+  const permissions = usePermissions();
   const [formOpen, setFormOpen] = useState(false);
   const isBackendUp = health?.status === "UP";
 
   function handleViewDetail(warehouse: Warehouse) {
+    if (!permissions.can("warehouses:view-detail")) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+      return;
+    }
+
+    void detail.openWarehouse(warehouse.id);
+  }
+
+  function handleViewStock(warehouse: Warehouse) {
+    if (!permissions.can("warehouses:view-stock")) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+      return;
+    }
+
     void detail.openWarehouse(warehouse.id);
   }
 
   async function handleCreateWarehouse(values: WarehouseFormValues) {
+    if (!permissions.canCreateWarehouse()) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+      return;
+    }
+
     await warehouses.createWarehouse(values);
     toast.success("Bodega registrada correctamente.");
   }
@@ -56,20 +80,22 @@ export function WarehousesPage() {
               </div>
             </div>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button type="button" onClick={() => setFormOpen(true)}>
-                  <Plus className="h-4 w-4" aria-hidden="true" />
-                  Registrar bodega
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Registrar bodega</TooltipContent>
-            </Tooltip>
+            {permissions.canCreateWarehouse() ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button type="button" onClick={() => setFormOpen(true)}>
+                    <Plus className="h-4 w-4" aria-hidden="true" />
+                    Registrar bodega
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Registrar bodega</TooltipContent>
+              </Tooltip>
+            ) : null}
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button type="button" variant="secondary" onClick={() => void warehouses.refresh()} disabled={warehouses.loading}>
-                  <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                <Button type="button" variant="secondary" onClick={() => void warehouses.refresh()} disabled={warehouses.refreshing}>
+                  {warehouses.refreshing ? <Spinner size="sm" label="Actualizando bodegas" /> : <RefreshCw className="h-4 w-4" aria-hidden="true" />}
                   Actualizar
                 </Button>
               </TooltipTrigger>
@@ -79,13 +105,13 @@ export function WarehousesPage() {
         </div>
       </section>
 
-      <WarehousesSummaryCards summary={warehouses.summary} loading={warehouses.loading} />
+      <WarehousesSummaryCards summary={warehouses.summary} loading={warehouses.initialLoading} />
 
       <WarehousesFilters
         filters={warehouses.filters}
         warehouses={warehouses.warehouses}
         locations={warehouses.locations}
-        loading={warehouses.loading}
+        loading={warehouses.refreshing}
         searching={warehouses.searching}
         hasActiveFilters={warehouses.hasActiveFilters}
         onChange={warehouses.updateFilters}
@@ -93,16 +119,22 @@ export function WarehousesPage() {
         onRefresh={() => void warehouses.refresh()}
       />
 
-      {warehouses.error ? (
-        <WarehouseErrorState message={warehouses.error} loading={warehouses.loading} onRetry={() => void warehouses.refresh()} />
+      {warehouses.initialLoading ? (
+        <TableSkeleton rows={5} columns={6} />
+      ) : warehouses.error ? (
+        <WarehouseErrorState message={warehouses.error} loading={warehouses.refreshing} onRetry={() => void warehouses.refresh()} />
       ) : warehouses.isEmpty || warehouses.hasNoResults ? (
         <WarehouseEmptyState hasActiveFilters={warehouses.hasActiveFilters} onResetFilters={warehouses.resetFilters} />
       ) : (
         <WarehousesTable
           warehouses={warehouses.filteredWarehouses}
-          loading={warehouses.loading}
+          loading={false}
           onViewDetail={handleViewDetail}
-          onViewStock={handleViewDetail}
+          onViewStock={handleViewStock}
+          permissions={{
+            canViewDetail: permissions.can("warehouses:view-detail"),
+            canViewStock: permissions.can("warehouses:view-stock")
+          }}
         />
       )}
 

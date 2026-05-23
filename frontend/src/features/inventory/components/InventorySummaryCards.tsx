@@ -1,4 +1,5 @@
 import { AlertTriangle, Boxes, PackageCheck, PackageX } from "lucide-react";
+import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { InfoCard } from "@/components/ui/InfoCard";
 import type { InventorySummary } from "@/features/inventory/types/inventoryTypes";
 
@@ -8,6 +9,10 @@ type InventorySummaryCardsProps = {
 };
 
 export function InventorySummaryCards({ summary, loading }: InventorySummaryCardsProps) {
+  if (loading) {
+    return <CardSkeleton count={4} columns={4} />;
+  }
+
   const cards = [
     {
       title: "Total de productos",

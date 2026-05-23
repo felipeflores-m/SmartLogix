@@ -3,6 +3,7 @@ import { ArrowDownToLine, ArrowUpFromLine, Calculator, RotateCw } from "lucide-r
 import { Button } from "@/components/ui/Button";
 import { FormMessage } from "@/components/ui/FormMessage";
 import { Modal } from "@/components/ui/Modal";
+import { Spinner } from "@/components/ui/spinner";
 import { TextInput } from "@/components/ui/TextInput";
 import { InventoryStatusBadge } from "@/features/inventory/components/InventoryStatusBadge";
 import type {
@@ -142,6 +143,7 @@ export function InventoryStockMovementForm({ item, warehouses, open, saving, onC
             Cancelar
           </Button>
           <Button type="submit" form={formId} disabled={saving || warehouses.length === 0}>
+            {saving ? <Spinner size="sm" label="Registrando movimiento" className="text-current" /> : null}
             {saving ? "Registrando..." : "Registrar movimiento"}
           </Button>
         </div>

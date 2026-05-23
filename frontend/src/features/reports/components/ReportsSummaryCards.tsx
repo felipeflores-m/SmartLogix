@@ -1,4 +1,5 @@
 import { AlertTriangle, Boxes, CheckCircle2, ClipboardList, PackageCheck, RadioTower, Truck, Warehouse } from "lucide-react";
+import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { InfoCard } from "@/components/ui/InfoCard";
 import type { ReportSummary } from "@/features/reports/types/reportTypes";
 
@@ -8,6 +9,10 @@ type ReportsSummaryCardsProps = {
 };
 
 export function ReportsSummaryCards({ loading, summary }: ReportsSummaryCardsProps) {
+  if (loading) {
+    return <CardSkeleton count={8} columns={4} />;
+  }
+
   const cards = [
     {
       title: "Productos registrados",

@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { CalendarClock, Hash, PackageCheck, RadioTower, Truck, Waypoints } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { DetailSkeleton } from "@/components/ui/detail-skeleton";
 import { Drawer } from "@/components/ui/Drawer";
 import { FormMessage } from "@/components/ui/FormMessage";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -18,6 +19,9 @@ type CarrierDetailDrawerProps = {
   history: ShipmentStatusHistoryEvent[];
   loading: boolean;
   error?: string | null;
+  permissions: {
+    canUpdateAvailability: boolean;
+  };
   onClose: () => void;
   onToggleAvailability: (carrier: Carrier) => void;
 };
@@ -34,6 +38,7 @@ export function CarrierDetailDrawer({
   loading,
   onClose,
   onToggleAvailability,
+  permissions,
   shipments
 }: CarrierDetailDrawerProps) {
   const [renderCarrier, setRenderCarrier] = useState<Carrier | null>(carrier);
@@ -57,7 +62,7 @@ export function CarrierDetailDrawer({
       subtitle={activeCarrier ? activeCarrier.code : "Preparando detalle del transportista."}
       footer={
         <div className="flex flex-col-reverse flex-wrap gap-3 sm:flex-row sm:justify-end">
-          {activeCarrier ? (
+          {permissions.canUpdateAvailability && activeCarrier ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button type="button" variant="secondary" onClick={() => onToggleAvailability(activeCarrier)}>
@@ -217,16 +222,6 @@ function ItemMetric({ label, value }: { label: string; value: string }) {
       <p className="mt-1 truncate text-sm font-semibold tabular-nums text-slate-950" title={value}>
         {value}
       </p>
-    </div>
-  );
-}
-
-function DetailSkeleton() {
-  return (
-    <div className="space-y-4">
-      {Array.from({ length: 6 }).map((_, index) => (
-        <div key={index} className="h-20 animate-pulse rounded-2xl bg-slate-100" />
-      ))}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Save } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { FormMessage } from "@/components/ui/FormMessage";
 import { Modal } from "@/components/ui/Modal";
+import { Spinner } from "@/components/ui/spinner";
 import type { Warehouse, WarehouseFormValues } from "@/features/warehouses/types/warehouseTypes";
 
 type WarehouseFormModalProps = {
@@ -71,7 +72,7 @@ export function WarehouseFormModal({ onClose, onSubmit, open, saving, warehouses
             Cancelar
           </Button>
           <Button type="button" onClick={() => void handleSubmit()} disabled={saving}>
-            <Save className="h-4 w-4" aria-hidden="true" />
+            {saving ? <Spinner size="sm" label="Guardando bodega" className="text-current" /> : <Save className="h-4 w-4" aria-hidden="true" />}
             {saving ? "Guardando..." : "Registrar bodega"}
           </Button>
         </div>

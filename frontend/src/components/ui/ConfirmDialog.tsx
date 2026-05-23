@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { Spinner } from "@/components/ui/spinner";
 
 type ConfirmDialogProps = {
   open: boolean;
@@ -43,6 +44,7 @@ export function ConfirmDialog({
             {cancelLabel}
           </Button>
           <Button type="button" variant={tone === "danger" ? "danger" : "primary"} onClick={onConfirm} disabled={loading}>
+            {loading ? <Spinner size="sm" label="Procesando" className="text-current" /> : null}
             {loading ? "Procesando..." : confirmLabel}
           </Button>
         </div>

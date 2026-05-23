@@ -3,6 +3,7 @@ import { Building2, PackageOpen, Sparkles, WalletCards } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { FormMessage } from "@/components/ui/FormMessage";
 import { Modal } from "@/components/ui/Modal";
+import { Spinner } from "@/components/ui/spinner";
 import { TextInput } from "@/components/ui/TextInput";
 import type {
   InventoryItem,
@@ -150,6 +151,7 @@ export function InventoryProductEditModal({
             Cancelar
           </Button>
           <Button type="submit" form={formId} disabled={saving}>
+            {saving ? <Spinner size="sm" label="Guardando producto" className="text-current" /> : null}
             {saving ? "Guardando..." : "Guardar cambios"}
           </Button>
         </div>

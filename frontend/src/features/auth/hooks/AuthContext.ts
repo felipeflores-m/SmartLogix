@@ -1,10 +1,11 @@
 import { createContext } from "react";
-import type { LoginRequest, UserResponse } from "@/lib/api/apiTypes";
+import type { LoginRequest } from "@/lib/api/apiTypes";
+import type { AuthStatus, AuthUser } from "@/features/auth/types/authTypes";
 
-export type AuthSessionStatus = "checking" | "authenticated" | "anonymous" | "unavailable";
+export type AuthSessionStatus = AuthStatus;
 
 export type AuthContextValue = {
-  user: UserResponse | null;
+  user: AuthUser | null;
   loading: boolean;
   checkingSession: boolean;
   error: string | null;
@@ -12,7 +13,7 @@ export type AuthContextValue = {
   isAuthenticated: boolean;
   authUnavailable: boolean;
   hasStoredToken: boolean;
-  login: (credentials: LoginRequest) => Promise<UserResponse>;
+  login: (credentials: LoginRequest) => Promise<AuthUser>;
   logout: () => Promise<void>;
   checkSession: () => Promise<void>;
   clearError: () => void;

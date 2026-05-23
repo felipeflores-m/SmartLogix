@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, GitBranch } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { Spinner } from "@/components/ui/spinner";
 import {
   getOrderStatusLabel,
   type Order,
@@ -74,6 +75,7 @@ export function OrderConfirmDialog({ action, loading, onClose, onConfirm }: Orde
             onClick={() => onConfirm({ status: isStatusAction && selectedStatus ? selectedStatus : undefined, comment: comment.trim() || undefined })}
             disabled={loading || (isStatusAction && !selectedStatus)}
           >
+            {loading ? <Spinner size="sm" label="Procesando pedido" className="text-current" /> : null}
             {loading ? "Procesando..." : config.confirmLabel}
           </Button>
         </div>

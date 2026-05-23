@@ -1,7 +1,9 @@
 import { useCallback, useRef, useState } from "react";
 import { getSafeErrorMessage } from "@/lib/api/apiErrors";
+import { ordersApi } from "@/features/orders/api/ordersApi";
 import { shipmentsApi } from "@/features/shipments/api/shipmentsApi";
 import type { Shipment, ShipmentHistoryEvent } from "@/features/shipments/types/shipmentTypes";
+import { enrichShipmentCustomerNames } from "@/features/shipments/utils/shipmentCustomer";
 
 export function useShipmentDetail() {
   const [shipment, setShipment] = useState<Shipment | null>(null);
@@ -21,9 +23,11 @@ export function useShipmentDetail() {
         shipmentsApi.getShipmentById(shipmentId),
         shipmentsApi.getShipmentHistory(shipmentId).catch(() => [])
       ]);
+      const orderResponse = await ordersApi.getOrderById(shipmentResponse.orderId).catch(() => null);
+      const enrichedShipment = orderResponse ? enrichShipmentCustomerNames([shipmentResponse], [orderResponse])[0] ?? shipmentResponse : shipmentResponse;
 
       if (requestIdRef.current === requestId) {
-        setShipment(shipmentResponse);
+        setShipment(enrichedShipment);
         setHistory(historyResponse);
       }
     } catch (detailError) {

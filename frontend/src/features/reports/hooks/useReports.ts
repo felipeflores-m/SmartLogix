@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiOrdersToOrderList, type OrderNormalizerContext } from "@/features/orders/api/ordersApi";
 import { getOrderStatusLabel, type Order } from "@/features/orders/types/orderTypes";
 import { getCarrierStatus, getShipmentStatusLabel, type ApiCarrier, type Shipment } from "@/features/carriers/types/carrierTypes";
@@ -17,6 +17,7 @@ import type {
   WarehousesReport
 } from "@/features/reports/types/reportTypes";
 import type { InventoryItem, WarehouseResponse } from "@/features/inventory/types/inventoryTypes";
+import { enrichShipmentCustomerNames } from "@/features/shipments/utils/shipmentCustomer";
 import type { WarehouseMovement } from "@/features/warehouses/types/warehouseTypes";
 
 const DEFAULT_FILTERS: ReportFilters = {
@@ -39,40 +40,58 @@ export function useReports() {
     errors: []
   });
   const [filters, setFilters] = useState<ReportFilters>(DEFAULT_FILTERS);
-  const [loading, setLoading] = useState(true);
+  const loadedRef = useRef(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadReports = useCallback(async () => {
-    setLoading(true);
+    const isInitialLoad = !loadedRef.current;
+
+    if (isInitialLoad) {
+      setInitialLoading(true);
+    } else {
+      setRefreshing(true);
+    }
+
     setError(null);
 
     try {
       const response = await reportsApi.getReportsData();
-      const normalizerContext = buildOrderContext(response.inventory?.items ?? [], response.inventory?.warehouses ?? [], response.shipments);
+      const shipments = enrichShipmentCustomerNames(response.shipments, response.apiOrders);
+      const normalizerContext = buildOrderContext(response.inventory?.items ?? [], response.inventory?.warehouses ?? [], shipments);
       const orders = apiOrdersToOrderList(response.apiOrders, normalizerContext);
       const nextSource: ReportsSourceData = {
         ...response,
+        shipments,
         orders
       };
 
       setSource(nextSource);
+      loadedRef.current = true;
 
       if (response.errors.length > 0 && !hasAnySourceData(nextSource)) {
         setError(response.errors[0] ?? "No fue posible cargar reportes.");
       }
     } catch {
-      setSource({
-        inventory: null,
-        apiOrders: [],
-        orders: [],
-        shipments: [],
-        carriers: [],
-        movements: [],
-        errors: []
-      });
-      setError("No fue posible cargar reportes.");
+      if (isInitialLoad) {
+        setSource({
+          inventory: null,
+          apiOrders: [],
+          orders: [],
+          shipments: [],
+          carriers: [],
+          movements: [],
+          errors: []
+        });
+        setError("No fue posible cargar reportes.");
+      }
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setInitialLoading(false);
+      } else {
+        setRefreshing(false);
+      }
     }
   }, []);
 
@@ -93,7 +112,7 @@ export function useReports() {
       filters.warehouseId !== "all" ||
       filters.carrierCode !== "all"
   );
-  const hasNoResults = !loading && !error && hasAnySourceData(source) && !hasAnySourceData(filteredSource);
+  const hasNoResults = !initialLoading && !error && hasAnySourceData(source) && !hasAnySourceData(filteredSource);
 
   const updateFilters = useCallback((nextFilters: Partial<ReportFilters>) => {
     setFilters((current) => ({ ...current, ...nextFilters }));
@@ -102,6 +121,8 @@ export function useReports() {
   const resetFilters = useCallback(() => {
     setFilters(DEFAULT_FILTERS);
   }, []);
+
+  const loading = initialLoading || refreshing;
 
   return {
     source,
@@ -112,9 +133,11 @@ export function useReports() {
     carriers,
     statusOptions,
     loading,
+    initialLoading,
+    refreshing,
     error,
     referenceError: source.errors[0] ?? null,
-    isEmpty: !loading && !error && !hasAnySourceData(source),
+    isEmpty: !initialLoading && !error && !hasAnySourceData(source),
     hasNoResults,
     hasActiveFilters,
     updateFilters,

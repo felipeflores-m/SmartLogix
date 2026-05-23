@@ -1,4 +1,5 @@
 import { ShipmentStatusBadge } from "@/features/shipments/components/ShipmentStatusBadge";
+import { getShipmentCustomerDisplayName } from "@/features/shipments/utils/shipmentCustomer";
 import type { Shipment } from "@/features/carriers/types/carrierTypes";
 import { ReportChartCard } from "@/features/reports/components/ReportChartCard";
 import { ReportTable, type ReportTableColumn } from "@/features/reports/components/ReportTable";
@@ -24,6 +25,11 @@ export function ShipmentsReportSection({ report }: ShipmentsReportSectionProps) 
       key: "order",
       header: "Pedido",
       render: (shipment) => shipment.orderNumber
+    },
+    {
+      key: "customer",
+      header: "Cliente",
+      render: (shipment) => getShipmentCustomerDisplayName(shipment)
     },
     {
       key: "carrier",

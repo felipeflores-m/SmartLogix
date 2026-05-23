@@ -1,4 +1,5 @@
 import { AlertTriangle, Boxes, CheckCircle2, PackageSearch, Warehouse, XCircle } from "lucide-react";
+import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { InfoCard } from "@/components/ui/InfoCard";
 import type { WarehouseSummary } from "@/features/warehouses/types/warehouseTypes";
 
@@ -8,6 +9,10 @@ type WarehousesSummaryCardsProps = {
 };
 
 export function WarehousesSummaryCards({ loading, summary }: WarehousesSummaryCardsProps) {
+  if (loading) {
+    return <CardSkeleton count={6} columns={4} />;
+  }
+
   const cards = [
     {
       title: "Total de bodegas",

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { getSafeErrorMessage } from "@/lib/api/apiErrors";
 import { warehousesApi } from "@/features/warehouses/api/warehousesApi";
@@ -20,7 +20,9 @@ const DEFAULT_FILTERS: WarehouseFilters = {
 export function useWarehouses() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [filters, setFilters] = useState<WarehouseFilters>(DEFAULT_FILTERS);
-  const [loading, setLoading] = useState(true);
+  const loadedRef = useRef(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const debouncedQuery = useDebouncedValue(filters.query, 400);
@@ -33,17 +35,31 @@ export function useWarehouses() {
   const searching = filters.query !== debouncedQuery;
 
   const loadWarehouses = useCallback(async () => {
-    setLoading(true);
+    const isInitialLoad = !loadedRef.current;
+
+    if (isInitialLoad) {
+      setInitialLoading(true);
+    } else {
+      setRefreshing(true);
+    }
+
     setError(null);
 
     try {
       const response = await warehousesApi.getWarehouseData();
       setWarehouses(response.warehouses);
+      loadedRef.current = true;
     } catch (loadError) {
-      setWarehouses([]);
-      setError(getSafeErrorMessage(loadError));
+      if (isInitialLoad) {
+        setWarehouses([]);
+        setError(getSafeErrorMessage(loadError));
+      }
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setInitialLoading(false);
+      } else {
+        setRefreshing(false);
+      }
     }
   }, []);
 
@@ -76,6 +92,8 @@ export function useWarehouses() {
     [loadWarehouses]
   );
 
+  const loading = initialLoading || refreshing;
+
   return {
     warehouses,
     filteredWarehouses,
@@ -83,11 +101,13 @@ export function useWarehouses() {
     summary,
     locations,
     loading,
+    initialLoading,
+    refreshing,
     saving,
     searching,
     error,
-    isEmpty: !loading && !error && warehouses.length === 0,
-    hasNoResults: !loading && !error && warehouses.length > 0 && filteredWarehouses.length === 0,
+    isEmpty: !initialLoading && !error && warehouses.length === 0,
+    hasNoResults: !initialLoading && !error && warehouses.length > 0 && filteredWarehouses.length === 0,
     hasActiveFilters,
     updateFilters,
     resetFilters,

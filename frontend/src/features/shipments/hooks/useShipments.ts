@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { getSafeErrorMessage } from "@/lib/api/apiErrors";
+import { ordersApi } from "@/features/orders/api/ordersApi";
 import { shipmentsApi } from "@/features/shipments/api/shipmentsApi";
 import type {
   Shipment,
@@ -10,6 +11,7 @@ import type {
   ShipmentSummary,
   UpdateShipmentStatusRequest
 } from "@/features/shipments/types/shipmentTypes";
+import { enrichShipmentCustomerNames } from "@/features/shipments/utils/shipmentCustomer";
 
 const DEFAULT_FILTERS: ShipmentFilters = {
   query: "",
@@ -20,7 +22,9 @@ const DEFAULT_FILTERS: ShipmentFilters = {
 export function useShipments() {
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [filters, setFilters] = useState<ShipmentFilters>(DEFAULT_FILTERS);
-  const [loading, setLoading] = useState(true);
+  const loadedRef = useRef(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const debouncedQuery = useDebouncedValue(filters.query, 400);
@@ -33,16 +37,40 @@ export function useShipments() {
   const searching = filters.query !== debouncedQuery;
 
   const loadShipments = useCallback(async () => {
-    setLoading(true);
+    const isInitialLoad = !loadedRef.current;
+
+    if (isInitialLoad) {
+      setInitialLoading(true);
+    } else {
+      setRefreshing(true);
+    }
+
     setError(null);
 
     try {
-      setShipments(await shipmentsApi.getShipments());
+      const [shipmentsResult, ordersResult] = await Promise.allSettled([shipmentsApi.getShipments(), ordersApi.getOrders()]);
+
+      if (shipmentsResult.status === "rejected") {
+        throw shipmentsResult.reason;
+      }
+
+      setShipments(
+        ordersResult.status === "fulfilled"
+          ? enrichShipmentCustomerNames(shipmentsResult.value, ordersResult.value)
+          : shipmentsResult.value
+      );
+      loadedRef.current = true;
     } catch (loadError) {
-      setShipments([]);
-      setError(getSafeErrorMessage(loadError));
+      if (isInitialLoad) {
+        setShipments([]);
+        setError(getSafeErrorMessage(loadError));
+      }
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setInitialLoading(false);
+      } else {
+        setRefreshing(false);
+      }
     }
   }, []);
 
@@ -92,6 +120,8 @@ export function useShipments() {
     [loadShipments]
   );
 
+  const loading = initialLoading || refreshing;
+
   return {
     shipments,
     filteredShipments,
@@ -99,11 +129,13 @@ export function useShipments() {
     summary,
     carriers,
     loading,
+    initialLoading,
+    refreshing,
     saving,
     searching,
     error,
-    isEmpty: !loading && !error && shipments.length === 0,
-    hasNoResults: !loading && !error && shipments.length > 0 && filteredShipments.length === 0,
+    isEmpty: !initialLoading && !error && shipments.length === 0,
+    hasNoResults: !initialLoading && !error && shipments.length > 0 && filteredShipments.length === 0,
     hasActiveFilters,
     updateFilters,
     resetFilters,
@@ -133,6 +165,7 @@ function filterShipments(shipments: Shipment[], filters: ShipmentFilters): Shipm
       [
         shipment.shipmentNumber,
         shipment.orderNumber,
+        shipment.customerName,
         shipment.carrier?.name ?? "",
         shipment.carrier?.code ?? "",
         shipment.trackingCode ?? "",

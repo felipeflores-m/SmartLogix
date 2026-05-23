@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { CalendarClock, Mail, MapPin, PackageCheck, Phone, Truck, UserRound, WalletCards } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { DetailSkeleton } from "@/components/ui/detail-skeleton";
 import { Drawer } from "@/components/ui/Drawer";
 import { FormMessage } from "@/components/ui/FormMessage";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -250,16 +251,6 @@ function ItemMetric({ label, value }: { label: string; value: string }) {
     <div>
       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
       <p className="mt-1 text-sm font-semibold tabular-nums text-slate-950">{value}</p>
-    </div>
-  );
-}
-
-function DetailSkeleton() {
-  return (
-    <div className="space-y-4">
-      {Array.from({ length: 6 }).map((_, index) => (
-        <div key={index} className="h-20 animate-pulse rounded-2xl bg-slate-100" />
-      ))}
     </div>
   );
 }

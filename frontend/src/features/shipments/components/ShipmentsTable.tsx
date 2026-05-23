@@ -3,14 +3,22 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { ShipmentActions } from "@/features/shipments/components/ShipmentActions";
 import { ShipmentStatusBadge } from "@/features/shipments/components/ShipmentStatusBadge";
 import type { Shipment } from "@/features/shipments/types/shipmentTypes";
+import { getShipmentCustomerDisplayName } from "@/features/shipments/utils/shipmentCustomer";
 import { cn } from "@/utils/cn";
 
 type ShipmentsTableProps = {
   shipments: Shipment[];
   loading: boolean;
+  permissions: ShipmentActionPermissions;
   onViewDetail: (shipment: Shipment) => void;
   onChangeStatus: (shipment: Shipment) => void;
   onCancel: (shipment: Shipment) => void;
+};
+
+type ShipmentActionPermissions = {
+  canViewDetail: boolean;
+  canUpdateStatus: boolean;
+  canCancelShipment: boolean;
 };
 
 const dateFormatter = new Intl.DateTimeFormat("es-CL", {
@@ -18,7 +26,7 @@ const dateFormatter = new Intl.DateTimeFormat("es-CL", {
   timeStyle: "short"
 });
 
-export function ShipmentsTable({ loading, onCancel, onChangeStatus, onViewDetail, shipments }: ShipmentsTableProps) {
+export function ShipmentsTable({ loading, onCancel, onChangeStatus, onViewDetail, permissions, shipments }: ShipmentsTableProps) {
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-panel transition-all duration-200 hover:border-slate-300 hover:shadow-md">
       <div className="flex flex-col gap-2 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -40,6 +48,7 @@ export function ShipmentsTable({ loading, onCancel, onChangeStatus, onViewDetail
               onCancel={onCancel}
               onChangeStatus={onChangeStatus}
               onViewDetail={onViewDetail}
+              permissions={permissions}
             />
           ))
         )}
@@ -72,6 +81,7 @@ export function ShipmentsTable({ loading, onCancel, onChangeStatus, onViewDetail
                   onCancel={onCancel}
                   onChangeStatus={onChangeStatus}
                   onViewDetail={onViewDetail}
+                  permissions={permissions}
                 />
               ))
             )}
@@ -86,12 +96,14 @@ function ShipmentTableRow({
   onCancel,
   onChangeStatus,
   onViewDetail,
+  permissions,
   shipment
 }: {
   shipment: Shipment;
   onViewDetail: (shipment: Shipment) => void;
   onChangeStatus: (shipment: Shipment) => void;
   onCancel: (shipment: Shipment) => void;
+  permissions: ShipmentActionPermissions;
 }) {
   return (
     <tr className="group transition-colors duration-150 hover:bg-slate-50/90">
@@ -105,7 +117,9 @@ function ShipmentTableRow({
           <p className="truncate font-semibold text-slate-950" title={shipment.orderNumber}>
             {shipment.orderNumber}
           </p>
-          <p className="mt-1 truncate text-xs text-slate-500">Cliente {shipment.customerId.toLocaleString("es-CL")}</p>
+          <p className="mt-1 truncate text-xs text-slate-500" title={getShipmentCustomerDisplayName(shipment)}>
+            {getShipmentCustomerDisplayName(shipment)}
+          </p>
         </div>
       </TableCell>
       <TableCell>
@@ -124,7 +138,7 @@ function ShipmentTableRow({
         <span className="whitespace-nowrap text-slate-600">{formatDate(shipment.updatedAt)}</span>
       </TableCell>
       <TableCell align="right" className="sticky right-0 z-10 border-l border-slate-100 bg-white pl-4 transition-colors group-hover:bg-slate-50/95">
-        <ShipmentActions shipment={shipment} onCancel={onCancel} onChangeStatus={onChangeStatus} onViewDetail={onViewDetail} />
+        <ShipmentActions shipment={shipment} onCancel={onCancel} onChangeStatus={onChangeStatus} onViewDetail={onViewDetail} permissions={permissions} />
       </TableCell>
     </tr>
   );
@@ -134,12 +148,14 @@ function ShipmentMobileCard({
   onCancel,
   onChangeStatus,
   onViewDetail,
+  permissions,
   shipment
 }: {
   shipment: Shipment;
   onViewDetail: (shipment: Shipment) => void;
   onChangeStatus: (shipment: Shipment) => void;
   onCancel: (shipment: Shipment) => void;
+  permissions: ShipmentActionPermissions;
 }) {
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-4 transition-colors duration-150 hover:border-slate-300">
@@ -149,7 +165,7 @@ function ShipmentMobileCard({
             {shipment.shipmentNumber}
           </span>
           <h4 className="mt-3 line-clamp-2 text-base font-semibold text-slate-950">{shipment.orderNumber}</h4>
-          <p className="mt-1 truncate text-sm leading-5 text-slate-500">{shipment.carrier?.name ?? "Sin asignar"}</p>
+          <p className="mt-1 truncate text-sm leading-5 text-slate-500">{getShipmentCustomerDisplayName(shipment)}</p>
         </div>
         <ShipmentStatusBadge status={shipment.status} />
       </div>
@@ -158,11 +174,13 @@ function ShipmentMobileCard({
         <MobileMetric label="Tracking" value={shipment.trackingCode ?? "No informado"} />
         <MobileMetric label="Creacion" value={formatDate(shipment.createdAt)} />
         <MobileMetric label="Destino" value={shipment.destinationCity ?? "No informado"} />
+        <MobileMetric label="Cliente" value={getShipmentCustomerDisplayName(shipment)} />
+        <MobileMetric label="Transportista" value={shipment.carrier?.name ?? "Sin asignar"} />
         <MobileMetric label="Actualizacion" value={formatDate(shipment.updatedAt)} />
       </div>
 
       <div className="mt-4">
-        <ShipmentActions shipment={shipment} layout="full" onCancel={onCancel} onChangeStatus={onChangeStatus} onViewDetail={onViewDetail} />
+        <ShipmentActions shipment={shipment} layout="full" onCancel={onCancel} onChangeStatus={onChangeStatus} onViewDetail={onViewDetail} permissions={permissions} />
       </div>
     </article>
   );

@@ -3,6 +3,7 @@ import { Building2, PackagePlus, Sparkles, WalletCards } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { FormMessage } from "@/components/ui/FormMessage";
 import { Modal } from "@/components/ui/Modal";
+import { Spinner } from "@/components/ui/spinner";
 import { TextInput } from "@/components/ui/TextInput";
 import type {
   CreateProductWithInitialStockRequest,
@@ -149,6 +150,7 @@ export function InventoryProductForm({ open, saving, warehouses, existingItems, 
             Cancelar
           </Button>
           <Button type="submit" form={formId} disabled={saving}>
+            {saving ? <Spinner size="sm" label="Registrando producto" className="text-current" /> : null}
             {saving ? "Registrando..." : "Registrar producto"}
           </Button>
         </div>

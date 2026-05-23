@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { useToast } from "@/components/ui/toastContext";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { InventoryDetailPanel } from "@/features/inventory/components/InventoryDetailPanel";
@@ -14,6 +15,8 @@ import { InventoryStockMovementForm } from "@/features/inventory/components/Inve
 import { InventorySummaryCards } from "@/features/inventory/components/InventorySummaryCards";
 import { InventoryTable } from "@/features/inventory/components/InventoryTable";
 import { useInventory } from "@/features/inventory/hooks/useInventory";
+import { ACTION_FORBIDDEN_TOAST_MESSAGE } from "@/features/auth/permissions/permissions";
+import { usePermissions } from "@/features/auth/permissions/usePermissions";
 import type {
   CreateProductWithInitialStockRequest,
   CreateStockMovementRequest,
@@ -25,6 +28,7 @@ import { getSafeErrorMessage } from "@/lib/api/apiErrors";
 export function InventoryPage() {
   const inventory = useInventory();
   const toast = useToast();
+  const permissions = usePermissions();
   const [productFormOpen, setProductFormOpen] = useState(false);
   const [detailItem, setDetailItem] = useState<InventoryItem | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -35,6 +39,11 @@ export function InventoryPage() {
   const detailRequestId = useRef(0);
 
   async function handleViewDetail(item: InventoryItem) {
+    if (!permissions.can("inventory:view-detail")) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+      return;
+    }
+
     const requestId = detailRequestId.current + 1;
     detailRequestId.current = requestId;
     setDetailItem(item);
@@ -65,37 +74,99 @@ export function InventoryPage() {
   }
 
   function handleAdjustFromDetail(item: InventoryItem) {
+    if (!permissions.canAdjustStock()) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+      return;
+    }
+
     setStockFormItem(item);
     handleCloseDetail();
   }
 
   function handleEditFromDetail(item: InventoryItem) {
+    if (!permissions.canEditProduct()) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+      return;
+    }
+
     setEditItem(item);
     handleCloseDetail();
   }
 
   function handleDeactivateFromDetail(item: InventoryItem) {
+    if (!permissions.canDeactivateProduct()) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+      return;
+    }
+
     setDeactivateItem(item);
     handleCloseDetail();
   }
 
+  function handleEditProduct(item: InventoryItem) {
+    if (!permissions.canEditProduct()) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+      return;
+    }
+
+    setEditItem(item);
+  }
+
+  function handleAdjustStock(item: InventoryItem) {
+    if (!permissions.canAdjustStock()) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+      return;
+    }
+
+    setStockFormItem(item);
+  }
+
+  function handleDeactivateProductRequest(item: InventoryItem) {
+    if (!permissions.canDeactivateProduct()) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+      return;
+    }
+
+    setDeactivateItem(item);
+  }
+
   async function handleCreateProduct(input: CreateProductWithInitialStockRequest) {
+    if (!permissions.canCreateProduct()) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+      return;
+    }
+
     await inventory.createProduct(input);
     toast.success("Producto registrado correctamente.");
   }
 
   async function handleUpdateProduct(productId: number, input: UpdateProductWithMinimumStockRequest) {
+    if (!permissions.canEditProduct()) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+      return;
+    }
+
     await inventory.updateProduct(productId, input);
     toast.success("Producto actualizado correctamente.");
   }
 
   async function handleCreateStockMovement(input: CreateStockMovementRequest) {
+    if (!permissions.canAdjustStock()) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+      return;
+    }
+
     await inventory.createStockMovement(input);
     toast.success("Movimiento registrado correctamente.");
   }
 
   async function handleDeactivateProduct() {
     if (!deactivateItem) {
+      return;
+    }
+
+    if (!permissions.canDeactivateProduct()) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
       return;
     }
 
@@ -120,25 +191,27 @@ export function InventoryPage() {
             </p>
           </div>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button type="button" onClick={() => setProductFormOpen(true)}>
-                <Plus className="h-4 w-4" aria-hidden="true" />
-                Registrar producto
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Registrar producto</TooltipContent>
-          </Tooltip>
+          {permissions.canCreateProduct() ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button type="button" onClick={() => setProductFormOpen(true)}>
+                  <Plus className="h-4 w-4" aria-hidden="true" />
+                  Registrar producto
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Registrar producto</TooltipContent>
+            </Tooltip>
+          ) : null}
         </div>
       </section>
 
-      <InventorySummaryCards summary={inventory.summary} loading={inventory.loading} />
+      <InventorySummaryCards summary={inventory.summary} loading={inventory.initialLoading} />
 
       <InventoryFilters
         filters={inventory.filters}
         items={inventory.items}
         warehouses={inventory.warehouses}
-        loading={inventory.loading}
+        loading={inventory.refreshing}
         searching={inventory.searching}
         hasActiveFilters={inventory.hasActiveFilters}
         onChange={inventory.updateFilters}
@@ -146,18 +219,26 @@ export function InventoryPage() {
         onRefresh={() => void inventory.refresh()}
       />
 
-      {inventory.error ? (
-        <InventoryErrorState message={inventory.error} loading={inventory.loading} onRetry={() => void inventory.refresh()} />
+      {inventory.initialLoading ? (
+        <TableSkeleton rows={5} columns={7} />
+      ) : inventory.error ? (
+        <InventoryErrorState message={inventory.error} loading={inventory.refreshing} onRetry={() => void inventory.refresh()} />
       ) : inventory.isEmpty || inventory.hasNoResults ? (
         <InventoryEmptyState hasActiveFilters={inventory.hasActiveFilters} onResetFilters={inventory.resetFilters} />
       ) : (
         <InventoryTable
           items={inventory.filteredItems}
-          loading={inventory.loading}
+          loading={false}
           onViewDetail={(item) => void handleViewDetail(item)}
-          onEditProduct={setEditItem}
-          onAdjustStock={setStockFormItem}
-          onDeactivateProduct={setDeactivateItem}
+          onEditProduct={handleEditProduct}
+          onAdjustStock={handleAdjustStock}
+          onDeactivateProduct={handleDeactivateProductRequest}
+          permissions={{
+            canViewDetail: permissions.can("inventory:view-detail"),
+            canEditProduct: permissions.canEditProduct(),
+            canAdjustStock: permissions.canAdjustStock(),
+            canDeactivateProduct: permissions.canDeactivateProduct()
+          }}
         />
       )}
 
@@ -186,6 +267,11 @@ export function InventoryPage() {
         onEditProduct={handleEditFromDetail}
         onAdjustStock={handleAdjustFromDetail}
         onDeactivateProduct={handleDeactivateFromDetail}
+        permissions={{
+          canEditProduct: permissions.canEditProduct(),
+          canAdjustStock: permissions.canAdjustStock(),
+          canDeactivateProduct: permissions.canDeactivateProduct()
+        }}
       />
       <InventoryStockMovementForm
         item={stockFormItem}

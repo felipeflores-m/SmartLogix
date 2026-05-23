@@ -91,11 +91,15 @@ function getPublicHttpMessage(status: number, payload?: unknown): string {
   }
 
   if (status === 401) {
-    return "Credenciales invalidas o sesion expirada.";
+    if (responseMessage && responseMessage.toLocaleLowerCase("es-CL").includes("invalid")) {
+      return "Credenciales invalidas.";
+    }
+
+    return "Tu sesión expiró. Inicia sesión nuevamente.";
   }
 
   if (status === 403) {
-    return "Tu usuario no tiene permisos para esta operacion.";
+    return "No tienes permisos para completar esta acción.";
   }
 
   if (status === 404) {

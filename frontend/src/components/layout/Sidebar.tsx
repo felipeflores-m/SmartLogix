@@ -12,19 +12,28 @@ import {
 } from "lucide-react";
 import type { NavigationItem } from "@/types/navigation";
 import { cn } from "@/utils/cn";
+import { usePermissions } from "@/features/auth/permissions/usePermissions";
+import type { PageKey } from "@/features/auth/permissions/permissions";
 
-const navigation: NavigationItem[] = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Inventario", href: "/inventario", icon: Boxes },
-  { name: "Pedidos", href: "/pedidos", icon: ClipboardList },
-  { name: "Envios", href: "/envios", icon: Truck },
-  { name: "Transportistas", href: "/transportistas", icon: MapPinned },
-  { name: "Bodegas", href: "/bodegas", icon: Warehouse },
-  { name: "Reportes", href: "/reportes", icon: BarChart3 },
-  { name: "Configuracion", href: "/configuracion", icon: Settings }
+type SidebarNavigationItem = NavigationItem & {
+  page: PageKey;
+};
+
+const navigation: SidebarNavigationItem[] = [
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, page: "dashboard" },
+  { name: "Inventario", href: "/inventario", icon: Boxes, page: "inventory" },
+  { name: "Pedidos", href: "/pedidos", icon: ClipboardList, page: "orders" },
+  { name: "Envios", href: "/envios", icon: Truck, page: "shipments" },
+  { name: "Transportistas", href: "/transportistas", icon: MapPinned, page: "carriers" },
+  { name: "Bodegas", href: "/bodegas", icon: Warehouse, page: "warehouses" },
+  { name: "Reportes", href: "/reportes", icon: BarChart3, page: "reports" },
+  { name: "Configuracion", href: "/configuracion", icon: Settings, page: "settings" }
 ];
 
 export function Sidebar() {
+  const { canViewPage } = usePermissions();
+  const allowedNavigation = navigation.filter((item) => canViewPage(item.page));
+
   return (
     <aside className="border-b border-slate-800 bg-slate-950 text-white lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:w-72 lg:border-b-0">
       <div className="flex h-full flex-col">
@@ -39,7 +48,7 @@ export function Sidebar() {
           </div>
         </div>
         <nav className="flex gap-2 overflow-x-auto px-4 py-3 lg:flex-1 lg:flex-col lg:overflow-visible lg:px-4 lg:py-5">
-          {navigation.map((item) => (
+          {allowedNavigation.map((item) => (
             <NavLink
               key={item.href}
               to={item.href}

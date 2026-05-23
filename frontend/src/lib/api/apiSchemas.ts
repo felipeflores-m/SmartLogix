@@ -1,5 +1,6 @@
 import { createValidationError } from "@/lib/api/apiErrors";
-import type { ApiResponse, HealthCheckResponse, LoginResponse, UserResponse } from "@/lib/api/apiTypes";
+import { AUTH_ROLES } from "@/lib/api/apiTypes";
+import type { ApiResponse, AuthRole, HealthCheckResponse, LoginResponse, UserResponse } from "@/lib/api/apiTypes";
 
 type Guard<T> = (value: unknown) => value is T;
 
@@ -72,8 +73,13 @@ function isUserResponse(value: unknown): value is UserResponse {
     typeof value.id === "number" &&
     typeof value.email === "string" &&
     typeof value.fullName === "string" &&
-    typeof value.role === "string"
+    typeof value.role === "string" &&
+    isAuthRole(value.role)
   );
+}
+
+function isAuthRole(value: string): value is AuthRole {
+  return AUTH_ROLES.some((role) => role === value);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

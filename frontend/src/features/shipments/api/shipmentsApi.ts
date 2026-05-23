@@ -13,6 +13,7 @@ import type {
   UpdateShipmentStatusRequest
 } from "@/features/shipments/types/shipmentTypes";
 import { isShipmentStatus } from "@/features/shipments/types/shipmentTypes";
+import { readShipmentCustomerName } from "@/features/shipments/utils/shipmentCustomer";
 
 type Parser<T> = (value: unknown) => T;
 
@@ -147,6 +148,7 @@ function parseShipment(value: unknown): Shipment {
     orderId: readNumber(value, "orderId"),
     orderNumber: readString(value, "orderNumber"),
     customerId: readNumber(value, "customerId"),
+    customerName: readShipmentCustomerName(value),
     carrier: value.carrier === null || value.carrier === undefined ? null : parseCarrier(value.carrier),
     status: readShipmentStatus(value, "status"),
     destinationAddress: readOptionalString(value, "destinationAddress"),

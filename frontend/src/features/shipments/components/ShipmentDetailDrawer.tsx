@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { CalendarClock, Hash, MapPin, PackageCheck, Route, Truck } from "lucide-react";
+import { CalendarClock, Hash, MapPin, PackageCheck, Route, Truck, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { DetailSkeleton } from "@/components/ui/detail-skeleton";
 import { Drawer } from "@/components/ui/Drawer";
 import { FormMessage } from "@/components/ui/FormMessage";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -12,12 +13,17 @@ import {
   type Shipment,
   type ShipmentHistoryEvent
 } from "@/features/shipments/types/shipmentTypes";
+import { getShipmentCustomerDisplayName } from "@/features/shipments/utils/shipmentCustomer";
 
 type ShipmentDetailDrawerProps = {
   shipment: Shipment | null;
   history: ShipmentHistoryEvent[];
   loading: boolean;
   error?: string | null;
+  permissions: {
+    canUpdateStatus: boolean;
+    canCancelShipment: boolean;
+  };
   onClose: () => void;
   onChangeStatus: (shipment: Shipment) => void;
   onCancel: (shipment: Shipment) => void;
@@ -35,6 +41,7 @@ export function ShipmentDetailDrawer({
   onCancel,
   onChangeStatus,
   onClose,
+  permissions,
   shipment
 }: ShipmentDetailDrawerProps) {
   const [renderShipment, setRenderShipment] = useState<Shipment | null>(shipment);
@@ -58,7 +65,7 @@ export function ShipmentDetailDrawer({
       subtitle={activeShipment ? activeShipment.orderNumber : "Preparando detalle del envio."}
       footer={
         <div className="flex flex-col-reverse flex-wrap gap-3 sm:flex-row sm:justify-end">
-          {activeShipment && getShipmentNextStatuses(activeShipment.status).length > 0 ? (
+          {permissions.canUpdateStatus && activeShipment && getShipmentNextStatuses(activeShipment.status).length > 0 ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button type="button" variant="secondary" onClick={() => onChangeStatus(activeShipment)}>
@@ -69,7 +76,7 @@ export function ShipmentDetailDrawer({
               <TooltipContent>Actualizar estado del envio</TooltipContent>
             </Tooltip>
           ) : null}
-          {activeShipment && canCancelShipment(activeShipment.status) ? (
+          {permissions.canCancelShipment && activeShipment && canCancelShipment(activeShipment.status) ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button type="button" variant="danger" onClick={() => onCancel(activeShipment)}>
@@ -106,6 +113,7 @@ export function ShipmentDetailDrawer({
             <div className="grid gap-3 sm:grid-cols-2">
               <DetailMetric icon={<Hash className="h-4 w-4" aria-hidden="true" />} label="Codigo" value={activeShipment.shipmentNumber} />
               <DetailMetric icon={<PackageCheck className="h-4 w-4" aria-hidden="true" />} label="Pedido asociado" value={activeShipment.orderNumber} />
+              <DetailMetric icon={<UserRound className="h-4 w-4" aria-hidden="true" />} label="Cliente" value={getShipmentCustomerDisplayName(activeShipment)} />
               <DetailMetric
                 icon={<Truck className="h-4 w-4" aria-hidden="true" />}
                 label="Transportista"
@@ -203,16 +211,6 @@ function DetailMetric({
         {value || "No informado"}
       </p>
       {helper ? <p className="mt-1 text-sm text-slate-500">{helper}</p> : null}
-    </div>
-  );
-}
-
-function DetailSkeleton() {
-  return (
-    <div className="space-y-4">
-      {Array.from({ length: 6 }).map((_, index) => (
-        <div key={index} className="h-20 animate-pulse rounded-2xl bg-slate-100" />
-      ))}
     </div>
   );
 }

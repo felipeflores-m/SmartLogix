@@ -2,9 +2,13 @@ import { useState } from "react";
 import { Plus, RadioTower, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { FormMessage } from "@/components/ui/FormMessage";
+import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { useToast } from "@/components/ui/toastContext";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ACTION_FORBIDDEN_TOAST_MESSAGE } from "@/features/auth/permissions/permissions";
+import { usePermissions } from "@/features/auth/permissions/usePermissions";
 import { useCarriers } from "@/features/carriers/hooks/useCarriers";
 import { OrderAssignCarrierModal } from "@/features/orders/components/OrderAssignCarrierModal";
 import { OrderConfirmDialog } from "@/features/orders/components/OrderConfirmDialog";
@@ -31,21 +35,37 @@ export function OrdersPage() {
   const detail = useOrderDetail(orders.normalizerContext);
   const { health, loading: statusLoading } = useBackendStatus();
   const toast = useToast();
+  const permissions = usePermissions();
   const [formOpen, setFormOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
   const [dispatchOrder, setDispatchOrder] = useState<Order | null>(null);
   const isBackendUp = health?.status === "UP";
 
   async function handleRegisterOrder(input: RegisterOrderInput) {
+    if (!permissions.canCreateOrder()) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+      return;
+    }
+
     await orders.registerOrder(input);
     toast.success("Pedido registrado correctamente.");
   }
 
   function handleViewOrder(order: Order) {
+    if (!permissions.can("orders:view-detail")) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+      return;
+    }
+
     void detail.openOrder(order.id);
   }
 
   function handleChangeStatus(order: Order) {
+    if (!permissions.canChangeOrderStatus()) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+      return;
+    }
+
     const statuses = orders.getNextStatuses(order);
 
     if (statuses.length === 0) {
@@ -53,11 +73,34 @@ export function OrdersPage() {
     }
 
     if (statuses.length === 1 && statuses[0] === "SHIPPED") {
+      if (!permissions.canAssignCarrier()) {
+        toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+        return;
+      }
+
       setDispatchOrder(order);
       return;
     }
 
     setConfirmAction({ type: "status", order, statuses });
+  }
+
+  function handleRequestConfirm(order: Order) {
+    if (!permissions.canValidateOrder()) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+      return;
+    }
+
+    setConfirmAction({ type: "confirm", order });
+  }
+
+  function handleRequestCancel(order: Order) {
+    if (!permissions.canCancelOrder()) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+      return;
+    }
+
+    setConfirmAction({ type: "cancel", order });
   }
 
   async function handleConfirmAction(payload: { status?: OrderStatus; comment?: string }) {
@@ -67,17 +110,37 @@ export function OrdersPage() {
 
     try {
       if (confirmAction.type === "confirm") {
+        if (!permissions.canValidateOrder()) {
+          toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+          return;
+        }
+
         await orders.confirmOrder(confirmAction.order);
         toast.success("Pedido confirmado correctamente.");
       }
 
       if (confirmAction.type === "cancel") {
+        if (!permissions.canCancelOrder()) {
+          toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+          return;
+        }
+
         await orders.cancelOrder(confirmAction.order.id);
         toast.success("Pedido cancelado correctamente.");
       }
 
       if (confirmAction.type === "status" && payload.status) {
+        if (!permissions.canChangeOrderStatus()) {
+          toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+          return;
+        }
+
         if (payload.status === "SHIPPED") {
+          if (!permissions.canAssignCarrier()) {
+            toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
+            return;
+          }
+
           setDispatchOrder(confirmAction.order);
           setConfirmAction(null);
           return;
@@ -99,6 +162,11 @@ export function OrdersPage() {
 
   async function handleDispatchOrder(input: { carrierCode: string; destinationCity?: string; comment?: string }) {
     if (!dispatchOrder) {
+      return;
+    }
+
+    if (!permissions.canChangeOrderStatus() || !permissions.canAssignCarrier()) {
+      toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
       return;
     }
 
@@ -138,28 +206,30 @@ export function OrdersPage() {
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button type="button" variant="secondary" onClick={() => void orders.refresh()} disabled={orders.loading}>
-                  <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                <Button type="button" variant="secondary" onClick={() => void orders.refresh()} disabled={orders.refreshing}>
+                  {orders.refreshing ? <Spinner size="sm" label="Actualizando pedidos" /> : <RefreshCw className="h-4 w-4" aria-hidden="true" />}
                   Actualizar
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Actualizar pedidos</TooltipContent>
             </Tooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button type="button" onClick={() => setFormOpen(true)} disabled={orders.loading}>
-                  <Plus className="h-4 w-4" aria-hidden="true" />
-                  Registrar pedido
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Registrar pedido</TooltipContent>
-            </Tooltip>
+            {permissions.canCreateOrder() ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button type="button" onClick={() => setFormOpen(true)} disabled={orders.initialLoading}>
+                    <Plus className="h-4 w-4" aria-hidden="true" />
+                    Registrar pedido
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Registrar pedido</TooltipContent>
+              </Tooltip>
+            ) : null}
           </div>
         </div>
       </section>
 
-      <OrdersSummaryCards summary={orders.summary} loading={orders.loading} />
+      <OrdersSummaryCards summary={orders.summary} loading={orders.initialLoading} />
 
       {orders.referenceError && !orders.error ? (
         <FormMessage tone="info" title="Informacion parcial">
@@ -167,12 +237,19 @@ export function OrdersPage() {
         </FormMessage>
       ) : null}
 
+      {orders.dispatching ? (
+        <div className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800">
+          <Spinner size="sm" label="Procesando despacho" />
+          Procesando despacho...
+        </div>
+      ) : null}
+
       <OrdersFilters
         filters={orders.filters}
         orders={orders.orders}
         customers={orders.customers}
         warehouses={orders.warehouses}
-        loading={orders.loading}
+        loading={orders.refreshing}
         searching={orders.searching}
         hasActiveFilters={orders.hasActiveFilters}
         onChange={orders.updateFilters}
@@ -180,20 +257,29 @@ export function OrdersPage() {
         onRefresh={() => void orders.refresh()}
       />
 
-      {orders.error ? (
-        <OrderErrorState message={orders.error} loading={orders.loading} onRetry={() => void orders.refresh()} />
+      {orders.initialLoading ? (
+        <TableSkeleton rows={5} columns={8} />
+      ) : orders.error ? (
+        <OrderErrorState message={orders.error} loading={orders.refreshing} onRetry={() => void orders.refresh()} />
       ) : orders.isEmpty || orders.hasNoResults ? (
         <OrderEmptyState hasActiveFilters={orders.hasActiveFilters} onResetFilters={orders.resetFilters} />
       ) : (
         <OrdersTable
           orders={orders.filteredOrders}
-          loading={orders.loading}
+          loading={false}
           getAvailability={orders.getAvailability}
           getNextStatuses={orders.getNextStatuses}
           onViewDetail={handleViewOrder}
-          onConfirm={(order) => setConfirmAction({ type: "confirm", order })}
+          onConfirm={handleRequestConfirm}
           onChangeStatus={handleChangeStatus}
-          onCancel={(order) => setConfirmAction({ type: "cancel", order })}
+          onCancel={handleRequestCancel}
+          permissions={{
+            canViewDetail: permissions.can("orders:view-detail"),
+            canValidateOrder: permissions.canValidateOrder(),
+            canChangeStatus: permissions.canChangeOrderStatus(),
+            canCancelOrder: permissions.canCancelOrder(),
+            canAssignCarrier: permissions.canAssignCarrier()
+          }}
         />
       )}
 
@@ -218,7 +304,7 @@ export function OrdersPage() {
       <OrderAssignCarrierModal
         order={dispatchOrder}
         carriers={carriers.carriers}
-        loading={orders.saving || carriers.loading}
+        loading={orders.dispatching || carriers.loading}
         onClose={() => setDispatchOrder(null)}
         onConfirm={(input) => void handleDispatchOrder(input)}
       />

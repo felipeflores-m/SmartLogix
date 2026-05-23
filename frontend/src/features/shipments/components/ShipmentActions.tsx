@@ -10,6 +10,11 @@ import { cn } from "@/utils/cn";
 
 type ShipmentActionsProps = {
   shipment: Shipment;
+  permissions: {
+    canViewDetail: boolean;
+    canUpdateStatus: boolean;
+    canCancelShipment: boolean;
+  };
   layout?: "icon" | "full";
   onViewDetail: (shipment: Shipment) => void;
   onChangeStatus: (shipment: Shipment) => void;
@@ -21,6 +26,7 @@ export function ShipmentActions({
   onCancel,
   onChangeStatus,
   onViewDetail,
+  permissions,
   shipment
 }: ShipmentActionsProps) {
   const nextStatuses = getShipmentNextStatuses(shipment.status);
@@ -29,14 +35,14 @@ export function ShipmentActions({
 
   return (
     <div className={cn(layout === "icon" ? "inline-flex min-w-[136px] justify-end gap-1.5" : "grid grid-cols-2 gap-2")}>
-      <ActionIconButton icon={Eye} label="Ver detalle" layout={layout} onClick={() => onViewDetail(shipment)} />
-      {shipment.trackingCode ? (
+      {permissions.canViewDetail ? <ActionIconButton icon={Eye} label="Ver detalle" layout={layout} onClick={() => onViewDetail(shipment)} /> : null}
+      {permissions.canViewDetail && shipment.trackingCode ? (
         <ActionIconButton icon={Route} label="Ver tracking" layout={layout} onClick={() => onViewDetail(shipment)} />
       ) : null}
-      {canChangeStatus ? (
+      {permissions.canUpdateStatus && canChangeStatus ? (
         <ActionIconButton icon={GitBranch} label="Cambiar estado" layout={layout} onClick={() => onChangeStatus(shipment)} />
       ) : null}
-      {canCancel ? (
+      {permissions.canCancelShipment && canCancel ? (
         <ActionIconButton icon={XCircle} label="Cancelar envio" layout={layout} tone="danger" onClick={() => onCancel(shipment)} />
       ) : null}
     </div>
