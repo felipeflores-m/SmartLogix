@@ -6,6 +6,7 @@ import cl.duoc.smartlogix.orders.presentation.dto.request.UpdateOrderStatusReque
 import cl.duoc.smartlogix.orders.presentation.dto.response.OrderResponse;
 import cl.duoc.smartlogix.orders.presentation.dto.response.OrderStatusHistoryResponse;
 import cl.duoc.smartlogix.orders.shared.response.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/orders")
+@Tag(name = "Pedidos", description = "Gestion de pedidos, estados e historial")
 public class OrderController {
 
     private final OrderService orderService;

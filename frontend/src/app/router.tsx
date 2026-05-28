@@ -1,9 +1,3 @@
-import {
-  Cable,
-  KeyRound,
-  Settings,
-  UsersRound
-} from "lucide-react";
 import { Navigate, createBrowserRouter } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
@@ -14,10 +8,10 @@ import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
 import { InventoryPage } from "@/features/inventory/pages/InventoryPage";
 import { OrdersPage } from "@/features/orders/pages/OrdersPage";
 import { ReportsPage } from "@/features/reports/pages/ReportsPage";
+import { SettingsPage } from "@/features/settings/pages/SettingsPage";
 import { ShipmentsPage } from "@/features/shipments/pages/ShipmentsPage";
 import { WarehousesPage } from "@/features/warehouses/pages/WarehousesPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
-import { PlaceholderPage } from "@/pages/PlaceholderPage";
 
 export const router = createBrowserRouter([
   {
@@ -91,32 +85,7 @@ export const router = createBrowserRouter([
         path: "/configuracion",
         element: (
           <ProtectedRoute permission={PAGE_PERMISSIONS.settings}>
-            <PlaceholderPage
-              title="Configuracion"
-              description="Administra usuarios, roles y preferencias de operacion."
-              cards={[
-                {
-                  title: "Usuarios y roles",
-                  description: "Permisos y perfiles de acceso.",
-                  icon: <UsersRound className="h-5 w-5" aria-hidden="true" />
-                },
-                {
-                  title: "Seguridad",
-                  description: "Opciones de acceso y proteccion de sesion.",
-                  icon: <KeyRound className="h-5 w-5" aria-hidden="true" />
-                },
-                {
-                  title: "Variables de operacion",
-                  description: "Preferencias generales del sistema.",
-                  icon: <Settings className="h-5 w-5" aria-hidden="true" />
-                },
-                {
-                  title: "Integraciones",
-                  description: "Preferencias para proveedores externos.",
-                  icon: <Cable className="h-5 w-5" aria-hidden="true" />
-                }
-              ]}
-            />
+            <SettingsPage />
           </ProtectedRoute>
         )
       }

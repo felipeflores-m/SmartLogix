@@ -5,6 +5,7 @@ import cl.duoc.smartlogix.inventory.presentation.dto.request.CreateProductReques
 import cl.duoc.smartlogix.inventory.presentation.dto.request.UpdateProductRequest;
 import cl.duoc.smartlogix.inventory.presentation.dto.response.ProductResponse;
 import cl.duoc.smartlogix.inventory.shared.response.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/inventory/products")
+@Tag(name = "Productos", description = "Consulta y mantenimiento de productos de inventario")
 public class ProductController {
 
     private final ProductService productService;

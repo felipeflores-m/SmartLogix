@@ -22,6 +22,7 @@ import {
   type UpdateOrderStatusRequest
 } from "@/features/orders/types/orderTypes";
 import { ApiClientError, getSafeErrorMessage } from "@/lib/api/apiErrors";
+import { useClientPagination } from "@/hooks/useClientPagination";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 const DEFAULT_FILTERS: OrderFilters = {
@@ -60,6 +61,7 @@ export function useOrders() {
   const orders = useMemo(() => apiOrdersToOrderList(apiOrders, normalizerContext), [apiOrders, normalizerContext]);
   const effectiveFilters = useMemo(() => ({ ...filters, query: debouncedQuery }), [debouncedQuery, filters]);
   const filteredOrders = useMemo(() => filterOrders(orders, effectiveFilters), [effectiveFilters, orders]);
+  const { paginatedItems: paginatedOrders, pagination, resetPage } = useClientPagination(filteredOrders);
   const summary = useMemo(() => calculateSummary(orders), [orders]);
   const hasActiveFilters = Boolean(
     filters.query.trim() || filters.status !== "all" || filters.customerId !== "all" || filters.warehouseId !== "all" || filters.dateFrom || filters.dateTo
@@ -137,12 +139,14 @@ export function useOrders() {
   }, [loadOrders]);
 
   const updateFilters = useCallback((nextFilters: Partial<OrderFilters>) => {
+    resetPage();
     setFilters((current) => ({ ...current, ...nextFilters }));
-  }, []);
+  }, [resetPage]);
 
   const resetFilters = useCallback(() => {
+    resetPage();
     setFilters(DEFAULT_FILTERS);
-  }, []);
+  }, [resetPage]);
 
   const registerOrder = useCallback(
     async (input: RegisterOrderInput) => {
@@ -274,6 +278,8 @@ export function useOrders() {
   return {
     orders,
     filteredOrders,
+    paginatedOrders,
+    pagination,
     customers,
     shipments,
     inventoryItems,

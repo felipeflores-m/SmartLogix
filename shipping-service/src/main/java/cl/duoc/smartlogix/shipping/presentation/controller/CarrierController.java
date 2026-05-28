@@ -4,6 +4,7 @@ import cl.duoc.smartlogix.shipping.application.service.CarrierService;
 import cl.duoc.smartlogix.shipping.presentation.dto.request.UpdateCarrierAvailabilityRequest;
 import cl.duoc.smartlogix.shipping.presentation.dto.response.CarrierResponse;
 import cl.duoc.smartlogix.shipping.shared.response.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/shipping/carriers")
+@Tag(name = "Transportistas", description = "Consulta y disponibilidad de transportistas")
 public class CarrierController {
 
     private final CarrierService carrierService;

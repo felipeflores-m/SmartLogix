@@ -1,6 +1,6 @@
 import { createValidationError } from "@/lib/api/apiErrors";
 import { AUTH_ROLES } from "@/lib/api/apiTypes";
-import type { ApiResponse, AuthRole, HealthCheckResponse, LoginResponse, UserResponse } from "@/lib/api/apiTypes";
+import type { ApiResponse, AuthRole, HealthCheckResponse, LoginResponse, SystemServiceHealth, UserResponse } from "@/lib/api/apiTypes";
 
 type Guard<T> = (value: unknown) => value is T;
 
@@ -11,6 +11,8 @@ export function parseHealthCheckResponse(value: unknown): HealthCheckResponse {
 
   return {
     status: value.status,
+    checkedAt: typeof value.checkedAt === "string" ? value.checkedAt : undefined,
+    services: isSystemServiceHealthArray(value.services) ? value.services : undefined,
     components: isRecord(value.components) ? value.components : undefined,
     groups: isStringArray(value.groups) ? value.groups : undefined
   };
@@ -74,7 +76,10 @@ function isUserResponse(value: unknown): value is UserResponse {
     typeof value.email === "string" &&
     typeof value.fullName === "string" &&
     typeof value.role === "string" &&
-    isAuthRole(value.role)
+    isAuthRole(value.role) &&
+    (value.active === undefined || typeof value.active === "boolean") &&
+    (value.createdAt === undefined || typeof value.createdAt === "string") &&
+    (value.updatedAt === undefined || typeof value.updatedAt === "string")
   );
 }
 
@@ -88,4 +93,18 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function isSystemServiceHealthArray(value: unknown): value is SystemServiceHealth[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (item) =>
+        isRecord(item) &&
+        typeof item.key === "string" &&
+        typeof item.name === "string" &&
+        typeof item.status === "string" &&
+        (item.message === undefined || typeof item.message === "string")
+    )
+  );
 }

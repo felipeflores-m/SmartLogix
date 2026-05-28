@@ -4,6 +4,7 @@ import cl.duoc.smartlogix.inventory.application.service.WarehouseService;
 import cl.duoc.smartlogix.inventory.presentation.dto.request.CreateWarehouseRequest;
 import cl.duoc.smartlogix.inventory.presentation.dto.response.WarehouseResponse;
 import cl.duoc.smartlogix.inventory.shared.response.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/inventory/warehouses")
+@Tag(name = "Bodegas", description = "Consulta y creacion de bodegas")
 public class WarehouseController {
 
     private final WarehouseService warehouseService;

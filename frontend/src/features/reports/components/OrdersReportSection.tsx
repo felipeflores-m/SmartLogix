@@ -1,5 +1,6 @@
 import { OrderStatusBadge } from "@/features/orders/components/OrderStatusBadge";
 import type { Order } from "@/features/orders/types/orderTypes";
+import { OrdersStatusChart } from "@/features/reports/components/OrdersStatusChart";
 import { ReportChartCard } from "@/features/reports/components/ReportChartCard";
 import { ReportTable, type ReportTableColumn } from "@/features/reports/components/ReportTable";
 import type { OrdersReport } from "@/features/reports/types/reportTypes";
@@ -53,7 +54,7 @@ export function OrdersReportSection({ report }: OrdersReportSectionProps) {
   return (
     <section className="space-y-5">
       <div className="grid gap-5 xl:grid-cols-2">
-        <ReportChartCard title="Pedidos por estado" description="Distribucion de pedidos registrados." data={report.ordersByStatus} />
+        <OrdersStatusChart data={report.ordersByStatus} />
         <ReportChartCard
           title="Resumen de pedidos"
           description="Indicadores principales del flujo comercial."

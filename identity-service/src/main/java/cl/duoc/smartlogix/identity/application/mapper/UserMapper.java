@@ -14,6 +14,9 @@ public final class UserMapper {
                 .email(entity.getEmail())
                 .fullName(entity.getFullName())
                 .role(entity.getRole().getName().name())
+                .active(entity.getActive())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
                 .build();
     }
 }

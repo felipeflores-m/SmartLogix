@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { DataPagination, type DataPaginationProps } from "@/components/ui/data-pagination";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { OrderActions } from "@/features/orders/components/OrderActions";
 import { OrderStatusBadge } from "@/features/orders/components/OrderStatusBadge";
@@ -8,6 +9,7 @@ import { cn } from "@/utils/cn";
 type OrdersTableProps = {
   orders: Order[];
   loading: boolean;
+  pagination: DataPaginationProps;
   permissions: OrderActionPermissions;
   getAvailability: (order: Order) => OrderAvailability;
   getNextStatuses: (order: Order) => OrderStatus[];
@@ -39,6 +41,7 @@ const currencyFormatter = new Intl.NumberFormat("es-CL", {
 export function OrdersTable({
   orders,
   loading,
+  pagination,
   permissions,
   getAvailability,
   getNextStatuses,
@@ -54,7 +57,9 @@ export function OrdersTable({
           <h3 className="text-base font-semibold text-slate-950">Pedidos registrados</h3>
           <p className="mt-1 text-sm text-slate-500">Seguimiento operativo por pedido.</p>
         </div>
-        <p className="text-sm font-medium text-slate-500">{loading ? "Cargando..." : `${orders.length.toLocaleString("es-CL")} pedidos`}</p>
+        <p className="text-sm font-medium text-slate-500">
+          {loading ? "Cargando..." : `${pagination.totalItems.toLocaleString("es-CL")} pedidos`}
+        </p>
       </div>
 
       <div className="grid gap-3 p-3 md:hidden">
@@ -117,6 +122,8 @@ export function OrdersTable({
           </tbody>
         </table>
       </div>
+
+      {!loading ? <DataPagination {...pagination} /> : null}
     </section>
   );
 }

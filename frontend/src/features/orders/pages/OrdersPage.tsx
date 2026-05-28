@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Plus, RadioTower, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { FormMessage } from "@/components/ui/FormMessage";
+import { ServiceStatusBanner } from "@/components/ui/ServiceStatusBanner";
 import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
@@ -23,6 +24,7 @@ import { useOrderDetail } from "@/features/orders/hooks/useOrderDetail";
 import { useOrders, type RegisterOrderInput } from "@/features/orders/hooks/useOrders";
 import type { Order, OrderStatus } from "@/features/orders/types/orderTypes";
 import { useBackendStatus } from "@/hooks/useBackendStatus";
+import { getStatusTone, getSystemStatusLabel } from "@/lib/system/systemHealth";
 
 type ConfirmAction =
   | { type: "confirm"; order: Order }
@@ -33,13 +35,12 @@ export function OrdersPage() {
   const orders = useOrders();
   const carriers = useCarriers();
   const detail = useOrderDetail(orders.normalizerContext);
-  const { health, loading: statusLoading } = useBackendStatus();
+  const systemStatus = useBackendStatus();
   const toast = useToast();
   const permissions = usePermissions();
   const [formOpen, setFormOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
   const [dispatchOrder, setDispatchOrder] = useState<Order | null>(null);
-  const isBackendUp = health?.status === "UP";
 
   async function handleRegisterOrder(input: RegisterOrderInput) {
     if (!permissions.canCreateOrder()) {
@@ -198,8 +199,8 @@ export function OrdersPage() {
               <div className="flex items-center gap-2">
                 <RadioTower className="h-4 w-4 text-slate-500" aria-hidden="true" />
                 <StatusBadge
-                  label={statusLoading ? "Verificando" : isBackendUp ? "Sistema operativo" : "Sin conexion"}
-                  tone={statusLoading ? "neutral" : isBackendUp ? "success" : "danger"}
+                  label={systemStatus.loading ? "Verificando" : getSystemStatusLabel(systemStatus.health?.status)}
+                  tone={systemStatus.loading ? "neutral" : getStatusTone(systemStatus.health?.status)}
                 />
               </div>
             </div>
@@ -231,6 +232,13 @@ export function OrdersPage() {
 
       <OrdersSummaryCards summary={orders.summary} loading={orders.initialLoading} />
 
+      <ServiceStatusBanner
+        health={systemStatus.health}
+        serviceKeys={["orders", "inventory"]}
+        loading={orders.refreshing || systemStatus.loading}
+        onRetry={() => void Promise.all([orders.refresh(), systemStatus.refresh()])}
+      />
+
       {orders.referenceError && !orders.error ? (
         <FormMessage tone="info" title="Informacion parcial">
           Algunos datos de apoyo no estan disponibles. Puedes revisar pedidos registrados y actualizar nuevamente.
@@ -238,7 +246,7 @@ export function OrdersPage() {
       ) : null}
 
       {orders.dispatching ? (
-        <div className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800">
+        <div className="animate-soft-pulse inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800">
           <Spinner size="sm" label="Procesando despacho" />
           Procesando despacho...
         </div>
@@ -265,8 +273,9 @@ export function OrdersPage() {
         <OrderEmptyState hasActiveFilters={orders.hasActiveFilters} onResetFilters={orders.resetFilters} />
       ) : (
         <OrdersTable
-          orders={orders.filteredOrders}
+          orders={orders.paginatedOrders}
           loading={false}
+          pagination={orders.pagination}
           getAvailability={orders.getAvailability}
           getNextStatuses={orders.getNextStatuses}
           onViewDetail={handleViewOrder}

@@ -232,7 +232,7 @@ function buildReportsData(source: ReportsSourceData): ReportsData {
     shipments,
     carriers,
     warehouses,
-    csvRows: buildCsvRows(summary, inventory, orders, shipments, carriers, warehouses)
+    csvRows: buildCsvRows(source)
   };
 }
 
@@ -374,30 +374,129 @@ function countShipmentsByCarrier(shipments: Shipment[]): ReportChartDatum[] {
   }));
 }
 
-function buildCsvRows(
-  summary: ReportSummary,
-  inventory: InventoryReport,
-  orders: OrdersReport,
-  shipments: ShipmentsReport,
-  carriers: CarriersReport,
-  warehouses: WarehousesReport
-): ReportCsvRow[] {
-  return [
-    { section: "General", label: "Productos registrados", value: String(summary.productsRegistered), detail: "" },
-    { section: "General", label: "Pedidos totales", value: String(summary.totalOrders), detail: "" },
-    { section: "General", label: "Envios en transito", value: String(summary.shipmentsInTransit), detail: "" },
-    { section: "Inventario", label: "Stock total", value: String(inventory.totalStock), detail: "" },
-    { section: "Inventario", label: "Productos con stock bajo", value: String(inventory.lowStockProducts.length), detail: "" },
-    { section: "Inventario", label: "Productos sin stock", value: String(inventory.outOfStockProducts.length), detail: "" },
-    { section: "Pedidos", label: "Pendientes", value: String(orders.pendingOrders), detail: "" },
-    { section: "Pedidos", label: "Confirmados", value: String(orders.confirmedOrders), detail: "" },
-    { section: "Pedidos", label: "Cancelados", value: String(orders.cancelledOrders), detail: "" },
-    { section: "Envios", label: "Entregados", value: String(shipments.deliveredShipments), detail: "" },
-    { section: "Envios", label: "Incidencias", value: String(shipments.incidentShipments), detail: "" },
-    { section: "Transportistas", label: "Activos", value: String(carriers.activeCarriers), detail: "" },
-    { section: "Transportistas", label: "No disponibles", value: String(carriers.unavailableCarriers), detail: "" },
-    { section: "Bodegas", label: "Activas", value: String(warehouses.activeWarehouses), detail: "" }
-  ];
+function buildCsvRows(source: ReportsSourceData): ReportCsvRow[] {
+  const rows: ReportCsvRow[] = [];
+  const inventory = source.inventory;
+
+  inventory?.items.forEach((item) => {
+    if (item.warehouseStocks.length === 0) {
+      rows.push({
+        ...emptyCsvRow(),
+        seccion: "Inventario",
+        registro: "Producto",
+        nombre: item.name,
+        codigo: item.sku,
+        estado: getInventoryStatusLabel(item.stockStatus),
+        fecha: formatCsvDate(item.updatedAt),
+        stock: formatNumber(item.totalQuantity),
+        stockMinimo: formatNumber(item.minimumStock),
+        total: formatCsvCurrency(item.unitPrice),
+        detalle: item.description ?? ""
+      });
+      return;
+    }
+
+    item.warehouseStocks.forEach((stock) => {
+      rows.push({
+        ...emptyCsvRow(),
+        seccion: "Inventario",
+        registro: "Stock",
+        nombre: item.name,
+        codigo: item.sku,
+        estado: getInventoryStatusLabel(item.stockStatus),
+        fecha: formatCsvDate(stock.updatedAt),
+        bodega: stock.warehouseName,
+        stock: formatNumber(stock.quantity),
+        stockMinimo: formatNumber(stock.minimumStock),
+        total: formatCsvCurrency(item.unitPrice),
+        detalle: item.description ?? ""
+      });
+    });
+  });
+
+  source.orders.forEach((order) => {
+    rows.push({
+      ...emptyCsvRow(),
+      seccion: "Pedidos",
+      registro: "Pedido",
+      nombre: order.orderNumber,
+      codigo: order.orderNumber,
+      estado: getOrderStatusLabel(order.status),
+      fecha: formatCsvDate(order.createdAt),
+      bodega: order.warehouseNames.join(", "),
+      cliente: order.customer.fullName,
+      total: formatCsvCurrency(order.totalAmount),
+      transportista: order.shipment?.carrier?.name ?? "",
+      detalle: `${order.itemCount} productos`
+    });
+  });
+
+  source.shipments.forEach((shipment) => {
+    rows.push({
+      ...emptyCsvRow(),
+      seccion: "Envios",
+      registro: "Envio",
+      nombre: shipment.shipmentNumber,
+      codigo: shipment.trackingCode ?? shipment.shipmentNumber,
+      estado: getShipmentStatusLabel(shipment.status),
+      fecha: formatCsvDate(shipment.createdAt),
+      cliente: shipment.customerName,
+      transportista: shipment.carrier?.name ?? "Sin asignar",
+      detalle: shipment.destinationCity ?? shipment.destinationAddress ?? ""
+    });
+  });
+
+  source.carriers.forEach((carrier) => {
+    const status = getCarrierStatus(carrier);
+    rows.push({
+      ...emptyCsvRow(),
+      seccion: "Transportistas",
+      registro: "Transportista",
+      nombre: carrier.name,
+      codigo: carrier.code,
+      estado: status === "ACTIVE" ? "Disponible" : status === "UNAVAILABLE" ? "No disponible" : "Inactivo",
+      fecha: formatCsvDate(carrier.createdAt),
+      transportista: carrier.name,
+      detalle: carrier.serviceType ?? ""
+    });
+  });
+
+  inventory?.warehouses.forEach((warehouse) => {
+    const stock = inventory.items.reduce((total, item) => {
+      const warehouseStock = item.warehouseStocks.find((candidate) => candidate.warehouseId === warehouse.id);
+      return total + Math.max(warehouseStock?.quantity ?? 0, 0);
+    }, 0);
+
+    rows.push({
+      ...emptyCsvRow(),
+      seccion: "Bodegas",
+      registro: "Bodega",
+      nombre: warehouse.name,
+      codigo: warehouse.code,
+      estado: warehouse.active ? "Activa" : "Inactiva",
+      fecha: formatCsvDate(warehouse.createdAt),
+      bodega: warehouse.name,
+      stock: formatNumber(stock),
+      detalle: warehouse.address ?? ""
+    });
+  });
+
+  source.movements.forEach((movement) => {
+    rows.push({
+      ...emptyCsvRow(),
+      seccion: "Bodegas",
+      registro: "Movimiento",
+      nombre: movement.productName,
+      codigo: movement.sku,
+      estado: getMovementLabel(movement.type),
+      fecha: formatCsvDate(movement.createdAt),
+      bodega: movement.warehouseName,
+      stock: formatNumber(movement.quantity),
+      detalle: movement.reason ?? movement.referenceCode ?? ""
+    });
+  });
+
+  return rows;
 }
 
 function getStatusOptions(orders: Order[], shipments: Shipment[]): Array<{ value: string; label: string }> {
@@ -444,4 +543,78 @@ function isInDateRange(value: string, dateFrom: string, dateTo: string): boolean
 
 function sortByCreatedDesc(first: { createdAt: string }, second: { createdAt: string }): number {
   return Date.parse(second.createdAt) - Date.parse(first.createdAt);
+}
+
+function emptyCsvRow(): ReportCsvRow {
+  return {
+    seccion: "",
+    registro: "",
+    nombre: "",
+    codigo: "",
+    estado: "",
+    fecha: "",
+    bodega: "",
+    stock: "",
+    stockMinimo: "",
+    cliente: "",
+    total: "",
+    transportista: "",
+    detalle: ""
+  };
+}
+
+function formatCsvDate(value: string | null | undefined): string {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat("es-CL", {
+    dateStyle: "short",
+    timeStyle: "short"
+  }).format(date);
+}
+
+function formatCsvCurrency(value: number): string {
+  return new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    maximumFractionDigits: 0
+  }).format(value);
+}
+
+function formatNumber(value: number): string {
+  return value.toLocaleString("es-CL");
+}
+
+function getInventoryStatusLabel(status: InventoryItem["stockStatus"]): string {
+  if (status === "available") {
+    return "Disponible";
+  }
+
+  if (status === "low") {
+    return "Stock bajo";
+  }
+
+  if (status === "out") {
+    return "Sin stock";
+  }
+
+  return "Inactivo";
+}
+
+function getMovementLabel(type: WarehouseMovement["type"]): string {
+  if (type === "IN") {
+    return "Ingreso";
+  }
+
+  if (type === "OUT" || type === "ORDER_OUT") {
+    return "Salida";
+  }
+
+  return "Ajuste";
 }

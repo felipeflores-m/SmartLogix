@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { DataPagination, type DataPaginationProps } from "@/components/ui/data-pagination";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { CarrierActions } from "@/features/carriers/components/CarrierActions";
 import { CarrierStatusBadge } from "@/features/carriers/components/CarrierStatusBadge";
@@ -8,6 +9,7 @@ import { cn } from "@/utils/cn";
 type CarriersTableProps = {
   carriers: Carrier[];
   loading: boolean;
+  pagination: DataPaginationProps;
   permissions: CarrierActionPermissions;
   onViewDetail: (carrier: Carrier) => void;
   onToggleAvailability: (carrier: Carrier) => void;
@@ -23,7 +25,7 @@ const dateFormatter = new Intl.DateTimeFormat("es-CL", {
   timeStyle: "short"
 });
 
-export function CarriersTable({ carriers, loading, onToggleAvailability, onViewDetail, permissions }: CarriersTableProps) {
+export function CarriersTable({ carriers, loading, onToggleAvailability, onViewDetail, pagination, permissions }: CarriersTableProps) {
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-panel transition-all duration-200 hover:border-slate-300 hover:shadow-md">
       <div className="flex flex-col gap-2 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -31,7 +33,9 @@ export function CarriersTable({ carriers, loading, onToggleAvailability, onViewD
           <h3 className="text-base font-semibold text-slate-950">Transportistas registrados</h3>
           <p className="mt-1 text-sm text-slate-500">Disponibilidad y asignaciones logisticas.</p>
         </div>
-        <p className="text-sm font-medium text-slate-500">{loading ? "Cargando..." : `${carriers.length.toLocaleString("es-CL")} transportistas`}</p>
+        <p className="text-sm font-medium text-slate-500">
+          {loading ? "Cargando..." : `${pagination.totalItems.toLocaleString("es-CL")} transportistas`}
+        </p>
       </div>
 
       <div className="grid gap-3 p-3 md:hidden">
@@ -83,6 +87,8 @@ export function CarriersTable({ carriers, loading, onToggleAvailability, onViewD
           </tbody>
         </table>
       </div>
+
+      {!loading ? <DataPagination {...pagination} /> : null}
     </section>
   );
 }

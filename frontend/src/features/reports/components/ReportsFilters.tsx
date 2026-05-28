@@ -34,10 +34,12 @@ export function ReportsFilters({
   statusOptions,
   warehouses
 }: ReportsFiltersProps) {
+  const fieldClassName = "block min-w-0 text-sm font-semibold text-slate-800";
+
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-panel transition-all duration-200 hover:border-slate-300 hover:shadow-md sm:p-5">
-      <div className="grid gap-4 xl:grid-cols-[160px_160px_180px_190px_220px_220px_auto]">
-        <label className="block text-sm font-semibold text-slate-800">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <label className={fieldClassName}>
           Desde
           <input
             className={selectClassName}
@@ -47,7 +49,7 @@ export function ReportsFilters({
           />
         </label>
 
-        <label className="block text-sm font-semibold text-slate-800">
+        <label className={fieldClassName}>
           Hasta
           <input
             className={selectClassName}
@@ -57,7 +59,7 @@ export function ReportsFilters({
           />
         </label>
 
-        <label className="block text-sm font-semibold text-slate-800">
+        <label className={fieldClassName}>
           Tipo
           <select
             className={selectClassName}
@@ -72,7 +74,7 @@ export function ReportsFilters({
           </select>
         </label>
 
-        <label className="block text-sm font-semibold text-slate-800">
+        <label className={fieldClassName}>
           Estado
           <select className={selectClassName} value={filters.status} onChange={(event) => onChange({ status: event.target.value })}>
             <option value="all">Todos los estados</option>
@@ -84,7 +86,7 @@ export function ReportsFilters({
           </select>
         </label>
 
-        <label className="block text-sm font-semibold text-slate-800">
+        <label className={fieldClassName}>
           Bodega
           <select
             className={selectClassName}
@@ -101,7 +103,7 @@ export function ReportsFilters({
           </select>
         </label>
 
-        <label className="block text-sm font-semibold text-slate-800">
+        <label className={fieldClassName}>
           Transportista
           <select
             className={selectClassName}
@@ -118,7 +120,7 @@ export function ReportsFilters({
           </select>
         </label>
 
-        <div className="flex items-end gap-2">
+        <div className="flex min-w-0 items-end gap-2 md:col-span-2 xl:col-span-2">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button type="button" variant="secondary" className="min-h-12 px-3" onClick={onRefresh} disabled={loading} aria-label="Actualizar reportes">

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { DataPagination, type DataPaginationProps } from "@/components/ui/data-pagination";
 import { WarehouseActions } from "@/features/warehouses/components/WarehouseActions";
 import { WarehouseStatusBadge } from "@/features/warehouses/components/WarehouseStatusBadge";
 import type { Warehouse } from "@/features/warehouses/types/warehouseTypes";
@@ -7,6 +8,7 @@ import { cn } from "@/utils/cn";
 type WarehousesTableProps = {
   warehouses: Warehouse[];
   loading: boolean;
+  pagination: DataPaginationProps;
   permissions: WarehouseActionPermissions;
   onViewDetail: (warehouse: Warehouse) => void;
   onViewStock: (warehouse: Warehouse) => void;
@@ -22,7 +24,7 @@ const dateFormatter = new Intl.DateTimeFormat("es-CL", {
   timeStyle: "short"
 });
 
-export function WarehousesTable({ loading, onViewDetail, onViewStock, permissions, warehouses }: WarehousesTableProps) {
+export function WarehousesTable({ loading, onViewDetail, onViewStock, pagination, permissions, warehouses }: WarehousesTableProps) {
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-panel transition-all duration-200 hover:border-slate-300 hover:shadow-md">
       <div className="flex flex-col gap-2 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -31,7 +33,7 @@ export function WarehousesTable({ loading, onViewDetail, onViewStock, permission
           <p className="mt-1 text-sm text-slate-500">Ubicaciones y disponibilidad consolidada.</p>
         </div>
         <p className="text-sm font-medium text-slate-500">
-          {loading ? "Cargando..." : `${warehouses.length.toLocaleString("es-CL")} bodegas`}
+          {loading ? "Cargando..." : `${pagination.totalItems.toLocaleString("es-CL")} bodegas`}
         </p>
       </div>
 
@@ -84,6 +86,8 @@ export function WarehousesTable({ loading, onViewDetail, onViewStock, permission
           </tbody>
         </table>
       </div>
+
+      {!loading ? <DataPagination {...pagination} /> : null}
     </section>
   );
 }

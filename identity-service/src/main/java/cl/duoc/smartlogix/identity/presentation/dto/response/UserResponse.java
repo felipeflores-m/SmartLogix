@@ -1,5 +1,6 @@
 package cl.duoc.smartlogix.identity.presentation.dto.response;
 
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -17,4 +18,7 @@ public class UserResponse {
     private String email;
     private String fullName;
     private String role;
+    private Boolean active;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
+import { DataPagination } from "@/components/ui/data-pagination";
+import { useClientPagination } from "@/hooks/useClientPagination";
 import { cn } from "@/utils/cn";
 
 export type ReportTableColumn<T> = {
@@ -18,8 +20,14 @@ type ReportTableProps<T> = {
 };
 
 export function ReportTable<T>({ columns, description, emptyMessage = "Sin registros", getRowKey, rows, title }: ReportTableProps<T>) {
+  const { paginatedItems, pagination, resetPage } = useClientPagination(rows);
+
+  useEffect(() => {
+    resetPage();
+  }, [resetPage, rows]);
+
   return (
-    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-panel transition-all duration-200 hover:border-slate-300 hover:shadow-md">
+    <section className="animate-fade-up overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-panel transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg">
       <div className="border-b border-slate-200 px-5 py-4">
         <h3 className="text-base font-semibold text-slate-950">{title}</h3>
         {description ? <p className="mt-1 text-sm leading-6 text-slate-500">{description}</p> : null}
@@ -48,7 +56,7 @@ export function ReportTable<T>({ columns, description, emptyMessage = "Sin regis
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
-              {rows.map((row) => (
+              {paginatedItems.map((row) => (
                 <tr key={getRowKey(row)} className="transition-colors duration-150 hover:bg-slate-50/90">
                   {columns.map((column) => (
                     <td
@@ -64,6 +72,8 @@ export function ReportTable<T>({ columns, description, emptyMessage = "Sin regis
           </table>
         </div>
       )}
+
+      {rows.length > 0 ? <DataPagination {...pagination} /> : null}
     </section>
   );
 }

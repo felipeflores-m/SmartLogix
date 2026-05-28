@@ -2,6 +2,7 @@ import type { WarehouseResponse } from "@/features/inventory/types/inventoryType
 import { ReportChartCard } from "@/features/reports/components/ReportChartCard";
 import { ReportTable, type ReportTableColumn } from "@/features/reports/components/ReportTable";
 import type { WarehousesReport } from "@/features/reports/types/reportTypes";
+import { WarehousesStockChart } from "@/features/reports/components/WarehousesStockChart";
 import { WarehouseStatusBadge } from "@/features/warehouses/components/WarehouseStatusBadge";
 import type { WarehouseMovement } from "@/features/warehouses/types/warehouseTypes";
 
@@ -69,8 +70,12 @@ export function WarehousesReportSection({ report }: WarehousesReportSectionProps
   return (
     <section className="space-y-5">
       <div className="grid gap-5 xl:grid-cols-2">
-        <ReportChartCard title="Stock por bodega" description="Unidades disponibles por ubicacion." data={report.stockByWarehouse} />
-        <ReportChartCard title="Productos por bodega" description="Productos con stock registrado por ubicacion." data={report.productsByWarehouse} />
+        <WarehousesStockChart stockByWarehouse={report.stockByWarehouse} productsByWarehouse={report.productsByWarehouse} />
+        <ReportChartCard
+          title="Productos por bodega"
+          description="Productos con stock registrado por ubicacion."
+          data={report.productsByWarehouse}
+        />
       </div>
 
       <ReportTable

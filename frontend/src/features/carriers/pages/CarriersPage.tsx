@@ -1,6 +1,7 @@
 import { RadioTower, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { FormMessage } from "@/components/ui/FormMessage";
+import { ServiceStatusBanner } from "@/components/ui/ServiceStatusBanner";
 import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
@@ -19,16 +20,16 @@ import { useCarrierDetail } from "@/features/carriers/hooks/useCarrierDetail";
 import { useCarriers } from "@/features/carriers/hooks/useCarriers";
 import type { Carrier } from "@/features/carriers/types/carrierTypes";
 import { useBackendStatus } from "@/hooks/useBackendStatus";
+import { getStatusTone, getSystemStatusLabel } from "@/lib/system/systemHealth";
 import { useState } from "react";
 
 export function CarriersPage() {
   const carriers = useCarriers();
   const detail = useCarrierDetail();
-  const { health, loading: statusLoading } = useBackendStatus();
+  const systemStatus = useBackendStatus();
   const toast = useToast();
   const permissions = usePermissions();
   const [availabilityCarrier, setAvailabilityCarrier] = useState<Carrier | null>(null);
-  const isBackendUp = health?.status === "UP";
 
   function handleViewDetail(carrier: Carrier) {
     if (!permissions.can("carriers:view-detail")) {
@@ -86,8 +87,8 @@ export function CarriersPage() {
               <div className="flex items-center gap-2">
                 <RadioTower className="h-4 w-4 text-slate-500" aria-hidden="true" />
                 <StatusBadge
-                  label={statusLoading ? "Verificando" : isBackendUp ? "Sistema operativo" : "Sin conexion"}
-                  tone={statusLoading ? "neutral" : isBackendUp ? "success" : "danger"}
+                  label={systemStatus.loading ? "Verificando" : getSystemStatusLabel(systemStatus.health?.status)}
+                  tone={systemStatus.loading ? "neutral" : getStatusTone(systemStatus.health?.status)}
                 />
               </div>
             </div>
@@ -106,6 +107,13 @@ export function CarriersPage() {
       </section>
 
       <CarriersSummaryCards summary={carriers.summary} loading={carriers.initialLoading} />
+
+      <ServiceStatusBanner
+        health={systemStatus.health}
+        serviceKeys={["shipping"]}
+        loading={carriers.refreshing || systemStatus.loading}
+        onRetry={() => void Promise.all([carriers.refresh(), systemStatus.refresh()])}
+      />
 
       {carriers.referenceError && !carriers.error ? (
         <FormMessage tone="info" title="Informacion parcial">
@@ -133,8 +141,9 @@ export function CarriersPage() {
         <CarrierEmptyState hasActiveFilters={carriers.hasActiveFilters} onResetFilters={carriers.resetFilters} />
       ) : (
         <CarriersTable
-          carriers={carriers.filteredCarriers}
+          carriers={carriers.paginatedCarriers}
           loading={false}
+          pagination={carriers.pagination}
           onViewDetail={handleViewDetail}
           onToggleAvailability={handleRequestAvailabilityChange}
           permissions={{

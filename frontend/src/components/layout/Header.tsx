@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useBackendStatus } from "@/hooks/useBackendStatus";
+import { getStatusTone, getSystemStatusLabel } from "@/lib/system/systemHealth";
 
 const pageMeta: Record<string, { title: string; subtitle: string }> = {
   "/dashboard": {
@@ -46,7 +47,6 @@ export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
   const { health, loading } = useBackendStatus();
   const meta = pageMeta[location.pathname] ?? pageMeta["/dashboard"];
-  const backendOnline = health?.status === "UP";
 
   async function handleLogout() {
     await logout();
@@ -62,8 +62,8 @@ export function Header() {
         </div>
         <div className="flex items-center gap-4">
           <StatusBadge
-            label={loading ? "Verificando" : backendOnline ? "Sistema operativo" : "Sin conexion"}
-            tone={loading ? "neutral" : backendOnline ? "success" : "danger"}
+            label={loading ? "Verificando" : getSystemStatusLabel(health?.status)}
+            tone={loading ? "neutral" : getStatusTone(health?.status)}
           />
           {user ? (
             <div className="hidden items-center gap-3 rounded-full border border-slate-200 bg-slate-50 py-1.5 pl-2 pr-4 sm:flex">

@@ -1,6 +1,7 @@
 import react from "@vitejs/plugin-react";
 import { fileURLToPath, URL } from "node:url";
-import { defineConfig, loadEnv } from "vite";
+import { loadEnv } from "vite";
+import { defineConfig } from "vitest/config";
 
 const DEV_PROXY_PREFIX = "/__smartlogix_api";
 
@@ -25,6 +26,11 @@ export default defineConfig(({ mode }) => {
           rewrite: (path) => path.replace(new RegExp(`^${DEV_PROXY_PREFIX}`), "")
         }
       }
+    },
+    test: {
+      environment: "jsdom",
+      setupFiles: "./src/test/setup.ts",
+      css: true
     }
   };
 });

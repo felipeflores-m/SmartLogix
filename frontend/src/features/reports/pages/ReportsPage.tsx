@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Download, RadioTower, RefreshCw } from "lucide-react";
+import { Download, FileSpreadsheet, RadioTower, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ChartSkeleton } from "@/components/ui/chart-skeleton";
 import { FormMessage } from "@/components/ui/FormMessage";
+import { ServiceStatusBanner } from "@/components/ui/ServiceStatusBanner";
 import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
@@ -21,16 +22,17 @@ import { ReportsSummaryCards } from "@/features/reports/components/ReportsSummar
 import { ShipmentsReportSection } from "@/features/reports/components/ShipmentsReportSection";
 import { WarehousesReportSection } from "@/features/reports/components/WarehousesReportSection";
 import { useReports } from "@/features/reports/hooks/useReports";
-import type { ReportCsvRow, ReportType, ReportsData } from "@/features/reports/types/reportTypes";
+import type { ReportType, ReportsData } from "@/features/reports/types/reportTypes";
+import { exportReportCsv, exportReportXlsx } from "@/features/reports/utils/reportExport";
 import { useBackendStatus } from "@/hooks/useBackendStatus";
+import { getStatusTone, getSystemStatusLabel } from "@/lib/system/systemHealth";
 
 export function ReportsPage() {
   const reports = useReports();
-  const { health, loading: statusLoading } = useBackendStatus();
+  const systemStatus = useBackendStatus();
   const toast = useToast();
   const permissions = usePermissions();
-  const [exporting, setExporting] = useState(false);
-  const isBackendUp = health?.status === "UP";
+  const [exporting, setExporting] = useState<"csv" | "xlsx" | null>(null);
   const hasExportData = !reports.initialLoading && !reports.error && reports.data.csvRows.length > 0 && !reports.isEmpty && !reports.hasNoResults;
   const canExport = permissions.canExportReports() && hasExportData && !exporting;
 
@@ -38,26 +40,46 @@ export function ReportsPage() {
     return reports.filters.reportType === "general" || reports.filters.reportType === section;
   }
 
-  function handleExportCsv() {
+  function canStartExport() {
     if (!permissions.canExportReports()) {
       toast.error(ACTION_FORBIDDEN_TOAST_MESSAGE);
-      return;
+      return false;
     }
 
     if (!canExport) {
-      toast.error("No hay informacion disponible para exportar.");
+      toast.error("No hay datos para exportar.");
+      return false;
+    }
+
+    return true;
+  }
+
+  function handleExportCsv() {
+    if (!canStartExport()) {
       return;
     }
 
-    setExporting(true);
+    setExporting("csv");
     window.setTimeout(() => {
       try {
-        exportCsv(reports.data.csvRows);
-        toast.success("Reporte exportado correctamente.");
+        exportReportCsv(reports.data.csvRows);
+        toast.success("CSV exportado correctamente.");
       } finally {
-        setExporting(false);
+        setExporting(null);
       }
     }, 0);
+  }
+
+  function handleExportExcel() {
+    if (!canStartExport()) {
+      return;
+    }
+
+    setExporting("xlsx");
+    void exportReportXlsx(reports.data.csvRows, reports.filters)
+      .then(() => toast.success("Excel exportado correctamente."))
+      .catch(() => toast.error("No fue posible exportar el reporte."))
+      .finally(() => setExporting(null));
   }
 
   return (
@@ -77,8 +99,8 @@ export function ReportsPage() {
               <div className="flex items-center gap-2">
                 <RadioTower className="h-4 w-4 text-slate-500" aria-hidden="true" />
                 <StatusBadge
-                  label={statusLoading ? "Verificando" : isBackendUp ? "Sistema operativo" : "Sin conexion"}
-                  tone={statusLoading ? "neutral" : isBackendUp ? "success" : "danger"}
+                  label={systemStatus.loading ? "Verificando" : getSystemStatusLabel(systemStatus.health?.status)}
+                  tone={systemStatus.loading ? "neutral" : getStatusTone(systemStatus.health?.status)}
                 />
               </div>
             </div>
@@ -94,21 +116,47 @@ export function ReportsPage() {
             </Tooltip>
 
             {permissions.canExportReports() ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button type="button" onClick={handleExportCsv} disabled={!canExport}>
-                    {exporting ? <Spinner size="sm" label="Exportando reporte" className="text-current" /> : <Download className="h-4 w-4" aria-hidden="true" />}
-                    {exporting ? "Exportando..." : "Exportar CSV"}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Exportar datos visibles</TooltipContent>
-              </Tooltip>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button type="button" onClick={handleExportExcel} disabled={!canExport}>
+                      {exporting === "xlsx" ? (
+                        <Spinner size="sm" label="Exportando Excel" className="text-current" />
+                      ) : (
+                        <FileSpreadsheet className="h-4 w-4" aria-hidden="true" />
+                      )}
+                      {exporting === "xlsx" ? "Exportando..." : "Exportar Excel"}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Exportar reporte profesional</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button type="button" variant="secondary" onClick={handleExportCsv} disabled={!canExport}>
+                      {exporting === "csv" ? (
+                        <Spinner size="sm" label="Exportando CSV" className="text-current" />
+                      ) : (
+                        <Download className="h-4 w-4" aria-hidden="true" />
+                      )}
+                      {exporting === "csv" ? "Exportando..." : "CSV"}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Exportar alternativa CSV</TooltipContent>
+                </Tooltip>
+              </div>
             ) : null}
           </div>
         </div>
       </section>
 
       <ReportsSummaryCards summary={reports.data.summary} loading={reports.initialLoading} />
+
+      <ServiceStatusBanner
+        health={systemStatus.health}
+        serviceKeys={["inventory", "orders", "shipping"]}
+        loading={reports.refreshing || systemStatus.loading}
+        onRetry={() => void Promise.all([reports.refresh(), systemStatus.refresh()])}
+      />
 
       <ReportsFilters
         filters={reports.filters}
@@ -123,7 +171,7 @@ export function ReportsPage() {
       />
 
       {reports.referenceError && !reports.error ? (
-        <FormMessage tone="info">Algunos indicadores pueden estar temporalmente sin informacion.</FormMessage>
+        <FormMessage tone="info">Parte de la informacion de apoyo no esta disponible. Reintenta la actualizacion cuando los servicios vuelvan a operar.</FormMessage>
       ) : null}
 
       {reports.initialLoading ? (
@@ -186,25 +234,3 @@ function GeneralReportSection({ data }: { data: ReportsData }) {
   );
 }
 
-function exportCsv(rows: ReportCsvRow[]) {
-  const headers = ["Seccion", "Indicador", "Valor", "Detalle"];
-  const content = [headers, ...rows.map((row) => [row.section, row.label, row.value, row.detail])]
-    .map((row) => row.map(escapeCsvValue).join(","))
-    .join("\n");
-  const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
-  const url = window.URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-
-  anchor.href = url;
-  anchor.download = "smartlogix-reportes.csv";
-  anchor.click();
-  window.URL.revokeObjectURL(url);
-}
-
-function escapeCsvValue(value: string): string {
-  if (!/[",\n]/.test(value)) {
-    return value;
-  }
-
-  return `"${value.replace(/"/g, '""')}"`;
-}

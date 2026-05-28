@@ -2,6 +2,7 @@ import { useState } from "react";
 import { RadioTower, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { ServiceStatusBanner } from "@/components/ui/ServiceStatusBanner";
 import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
@@ -20,16 +21,16 @@ import { useShipmentDetail } from "@/features/shipments/hooks/useShipmentDetail"
 import { useShipments } from "@/features/shipments/hooks/useShipments";
 import type { Shipment, ShipmentStatus } from "@/features/shipments/types/shipmentTypes";
 import { useBackendStatus } from "@/hooks/useBackendStatus";
+import { getStatusTone, getSystemStatusLabel } from "@/lib/system/systemHealth";
 
 export function ShipmentsPage() {
   const shipments = useShipments();
   const detail = useShipmentDetail();
-  const { health, loading: statusLoading } = useBackendStatus();
+  const systemStatus = useBackendStatus();
   const toast = useToast();
   const permissions = usePermissions();
   const [statusShipment, setStatusShipment] = useState<Shipment | null>(null);
   const [cancelShipment, setCancelShipment] = useState<Shipment | null>(null);
-  const isBackendUp = health?.status === "UP";
 
   function handleViewDetail(shipment: Shipment) {
     if (!permissions.can("shipments:view-detail")) {
@@ -115,8 +116,8 @@ export function ShipmentsPage() {
               <div className="flex items-center gap-2">
                 <RadioTower className="h-4 w-4 text-slate-500" aria-hidden="true" />
                 <StatusBadge
-                  label={statusLoading ? "Verificando" : isBackendUp ? "Sistema operativo" : "Sin conexion"}
-                  tone={statusLoading ? "neutral" : isBackendUp ? "success" : "danger"}
+                  label={systemStatus.loading ? "Verificando" : getSystemStatusLabel(systemStatus.health?.status)}
+                  tone={systemStatus.loading ? "neutral" : getStatusTone(systemStatus.health?.status)}
                 />
               </div>
             </div>
@@ -136,6 +137,13 @@ export function ShipmentsPage() {
 
       <ShipmentsSummaryCards summary={shipments.summary} loading={shipments.initialLoading} />
 
+      <ServiceStatusBanner
+        health={systemStatus.health}
+        serviceKeys={["shipping"]}
+        loading={shipments.refreshing || systemStatus.loading}
+        onRetry={() => void Promise.all([shipments.refresh(), systemStatus.refresh()])}
+      />
+
       <ShipmentsFilters
         filters={shipments.filters}
         shipments={shipments.shipments}
@@ -148,6 +156,13 @@ export function ShipmentsPage() {
         onRefresh={() => void shipments.refresh()}
       />
 
+      {shipments.saving && statusShipment ? (
+        <div className="animate-soft-pulse inline-flex items-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm font-semibold text-cyan-800">
+          <Spinner size="sm" label="Actualizando envio" />
+          Actualizando envio...
+        </div>
+      ) : null}
+
       {shipments.initialLoading ? (
         <TableSkeleton rows={5} columns={8} />
       ) : shipments.error ? (
@@ -156,8 +171,9 @@ export function ShipmentsPage() {
         <ShipmentEmptyState hasActiveFilters={shipments.hasActiveFilters} onResetFilters={shipments.resetFilters} />
       ) : (
         <ShipmentsTable
-          shipments={shipments.filteredShipments}
+          shipments={shipments.paginatedShipments}
           loading={false}
+          pagination={shipments.pagination}
           onViewDetail={handleViewDetail}
           onChangeStatus={handleRequestStatusChange}
           onCancel={handleRequestCancel}

@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { ServiceStatusBanner } from "@/components/ui/ServiceStatusBanner";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { useToast } from "@/components/ui/toastContext";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -24,9 +25,11 @@ import type {
   UpdateProductWithMinimumStockRequest
 } from "@/features/inventory/types/inventoryTypes";
 import { getSafeErrorMessage } from "@/lib/api/apiErrors";
+import { useBackendStatus } from "@/hooks/useBackendStatus";
 
 export function InventoryPage() {
   const inventory = useInventory();
+  const systemStatus = useBackendStatus();
   const toast = useToast();
   const permissions = usePermissions();
   const [productFormOpen, setProductFormOpen] = useState(false);
@@ -207,6 +210,13 @@ export function InventoryPage() {
 
       <InventorySummaryCards summary={inventory.summary} loading={inventory.initialLoading} />
 
+      <ServiceStatusBanner
+        health={systemStatus.health}
+        serviceKeys={["inventory"]}
+        loading={inventory.refreshing || systemStatus.loading}
+        onRetry={() => void Promise.all([inventory.refresh(), systemStatus.refresh()])}
+      />
+
       <InventoryFilters
         filters={inventory.filters}
         items={inventory.items}
@@ -227,8 +237,9 @@ export function InventoryPage() {
         <InventoryEmptyState hasActiveFilters={inventory.hasActiveFilters} onResetFilters={inventory.resetFilters} />
       ) : (
         <InventoryTable
-          items={inventory.filteredItems}
+          items={inventory.paginatedItems}
           loading={false}
+          pagination={inventory.pagination}
           onViewDetail={(item) => void handleViewDetail(item)}
           onEditProduct={handleEditProduct}
           onAdjustStock={handleAdjustStock}

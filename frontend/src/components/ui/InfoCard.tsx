@@ -13,7 +13,7 @@ export function InfoCard({ title, value, supportingText, icon, className }: Info
   return (
     <section
       className={cn(
-        "group rounded-xl border border-slate-200 bg-white p-5 shadow-panel transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md",
+        "animate-fade-up group rounded-xl border border-slate-200 bg-white p-5 shadow-panel transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md",
         className
       )}
     >

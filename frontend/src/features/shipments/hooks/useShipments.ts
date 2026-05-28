@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useClientPagination } from "@/hooks/useClientPagination";
 import { getSafeErrorMessage } from "@/lib/api/apiErrors";
 import { ordersApi } from "@/features/orders/api/ordersApi";
 import { shipmentsApi } from "@/features/shipments/api/shipmentsApi";
@@ -31,6 +32,7 @@ export function useShipments() {
 
   const effectiveFilters = useMemo(() => ({ ...filters, query: debouncedQuery }), [debouncedQuery, filters]);
   const filteredShipments = useMemo(() => filterShipments(shipments, effectiveFilters), [effectiveFilters, shipments]);
+  const { paginatedItems: paginatedShipments, pagination, resetPage } = useClientPagination(filteredShipments);
   const summary = useMemo(() => calculateSummary(shipments), [shipments]);
   const carriers = useMemo(() => getShipmentCarriers(shipments), [shipments]);
   const hasActiveFilters = Boolean(filters.query.trim() || filters.status !== "all" || filters.carrierCode !== "all");
@@ -79,12 +81,14 @@ export function useShipments() {
   }, [loadShipments]);
 
   const updateFilters = useCallback((nextFilters: Partial<ShipmentFilters>) => {
+    resetPage();
     setFilters((current) => ({ ...current, ...nextFilters }));
-  }, []);
+  }, [resetPage]);
 
   const resetFilters = useCallback(() => {
+    resetPage();
     setFilters(DEFAULT_FILTERS);
-  }, []);
+  }, [resetPage]);
 
   const updateShipmentStatus = useCallback(
     async (shipmentId: number, input: UpdateShipmentStatusRequest) => {
@@ -125,6 +129,8 @@ export function useShipments() {
   return {
     shipments,
     filteredShipments,
+    paginatedShipments,
+    pagination,
     filters,
     summary,
     carriers,

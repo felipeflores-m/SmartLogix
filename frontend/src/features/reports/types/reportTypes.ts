@@ -101,10 +101,19 @@ export type WarehousesReport = {
 };
 
 export type ReportCsvRow = {
-  section: string;
-  label: string;
-  value: string;
-  detail: string;
+  seccion: string;
+  registro: string;
+  nombre: string;
+  codigo: string;
+  estado: string;
+  fecha: string;
+  bodega: string;
+  stock: string;
+  stockMinimo: string;
+  cliente: string;
+  total: string;
+  transportista: string;
+  detalle: string;
 };
 
 export type ReportsData = {

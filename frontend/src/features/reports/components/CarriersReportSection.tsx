@@ -1,5 +1,6 @@
 import { CarrierStatusBadge } from "@/features/carriers/components/CarrierStatusBadge";
 import { getCarrierStatus, type ApiCarrier } from "@/features/carriers/types/carrierTypes";
+import { CarriersPerformanceChart } from "@/features/reports/components/CarriersPerformanceChart";
 import { ReportChartCard } from "@/features/reports/components/ReportChartCard";
 import { ReportTable, type ReportTableColumn } from "@/features/reports/components/ReportTable";
 import type { CarriersReport } from "@/features/reports/types/reportTypes";
@@ -35,14 +36,10 @@ export function CarriersReportSection({ report }: CarriersReportSectionProps) {
   return (
     <section className="space-y-5">
       <div className="grid gap-5 xl:grid-cols-2">
+        <CarriersPerformanceChart report={report} />
         <ReportChartCard
-          title="Envios por transportista"
-          description="Despachos asignados segun transportista."
-          data={report.shipmentsByCarrier}
-        />
-        <ReportChartCard
-          title="Disponibilidad de transportistas"
-          description="Estado operacional registrado."
+          title="Resumen de transportistas"
+          description="Disponibilidad operacional registrada."
           data={[
             { label: "Activos", value: report.activeCarriers, tone: "green" },
             { label: "No disponibles", value: report.unavailableCarriers, tone: "yellow" }

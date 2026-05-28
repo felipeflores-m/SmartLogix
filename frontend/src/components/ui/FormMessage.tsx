@@ -33,9 +33,9 @@ export function FormMessage({ tone = "info", title, children, className }: FormM
   const Icon = icons[tone];
 
   return (
-    <div className={cn("flex gap-3 rounded-xl border p-3 text-sm", toneClasses[tone], className)}>
+    <div className={cn("flex w-full gap-3 rounded-xl border p-3 text-left text-sm !items-start !justify-start", toneClasses[tone], className)}>
       <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", iconClasses[tone])} aria-hidden="true" />
-      <div>
+      <div className="min-w-0 flex-1 text-left">
         {title ? <p className="font-semibold">{title}</p> : null}
         <div className={cn("leading-6", title && "mt-0.5")}>{children}</div>
       </div>

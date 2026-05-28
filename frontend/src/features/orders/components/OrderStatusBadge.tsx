@@ -27,7 +27,7 @@ export function OrderStatusBadge({ status }: OrderStatusBadgeProps) {
   const description = ORDER_STATUS_DESCRIPTIONS[status];
 
   const badge = (
-    <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1", variantClasses[variant])}>
+    <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 transition-colors duration-200", variantClasses[variant])}>
       <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-current" />
       {label}
     </span>

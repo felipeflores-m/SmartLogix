@@ -34,9 +34,20 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                        .requestMatchers("/actuator/health", "/actuator/info", "/actuator/gateway/routes").permitAll()
+                        .requestMatchers(
+                                "/actuator/health",
+                                "/actuator/info",
+                                "/actuator/gateway/routes",
+                                "/api/system/health",
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs",
+                                "/v3/api-docs/**"
+                        ).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/me").authenticated()
+                        .requestMatchers(HttpMethod.PATCH, "/api/users/me/password").authenticated()
+                        .requestMatchers("/api/users", "/api/users/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/inventory/**", "/api/orders/**", "/api/shipping/**")
                         .hasAnyRole("ADMIN", "OPERATOR", "VIEWER")
                         .requestMatchers("/api/inventory/**", "/api/orders/**", "/api/shipping/**")

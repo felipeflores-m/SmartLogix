@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useClientPagination } from "@/hooks/useClientPagination";
 import { getSafeErrorMessage } from "@/lib/api/apiErrors";
 import { warehousesApi } from "@/features/warehouses/api/warehousesApi";
 import {
@@ -29,6 +30,7 @@ export function useWarehouses() {
 
   const effectiveFilters = useMemo(() => ({ ...filters, query: debouncedQuery }), [debouncedQuery, filters]);
   const filteredWarehouses = useMemo(() => filterWarehouses(warehouses, effectiveFilters), [effectiveFilters, warehouses]);
+  const { paginatedItems: paginatedWarehouses, pagination, resetPage } = useClientPagination(filteredWarehouses);
   const summary = useMemo(() => calculateSummary(warehouses), [warehouses]);
   const locations = useMemo(() => getWarehouseLocations(warehouses), [warehouses]);
   const hasActiveFilters = Boolean(filters.query.trim() || filters.status !== "all" || filters.location !== "all");
@@ -68,12 +70,14 @@ export function useWarehouses() {
   }, [loadWarehouses]);
 
   const updateFilters = useCallback((nextFilters: Partial<WarehouseFilters>) => {
+    resetPage();
     setFilters((current) => ({ ...current, ...nextFilters }));
-  }, []);
+  }, [resetPage]);
 
   const resetFilters = useCallback(() => {
+    resetPage();
     setFilters(DEFAULT_FILTERS);
-  }, []);
+  }, [resetPage]);
 
   const createWarehouse = useCallback(
     async (values: WarehouseFormValues) => {
@@ -97,6 +101,8 @@ export function useWarehouses() {
   return {
     warehouses,
     filteredWarehouses,
+    paginatedWarehouses,
+    pagination,
     filters,
     summary,
     locations,

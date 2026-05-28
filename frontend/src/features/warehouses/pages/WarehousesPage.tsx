@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus, RadioTower, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { ServiceStatusBanner } from "@/components/ui/ServiceStatusBanner";
 import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
@@ -19,15 +20,15 @@ import { useWarehouseDetail } from "@/features/warehouses/hooks/useWarehouseDeta
 import { useWarehouses } from "@/features/warehouses/hooks/useWarehouses";
 import type { Warehouse, WarehouseFormValues } from "@/features/warehouses/types/warehouseTypes";
 import { useBackendStatus } from "@/hooks/useBackendStatus";
+import { getStatusTone, getSystemStatusLabel } from "@/lib/system/systemHealth";
 
 export function WarehousesPage() {
   const warehouses = useWarehouses();
   const detail = useWarehouseDetail();
-  const { health, loading: statusLoading } = useBackendStatus();
+  const systemStatus = useBackendStatus();
   const toast = useToast();
   const permissions = usePermissions();
   const [formOpen, setFormOpen] = useState(false);
-  const isBackendUp = health?.status === "UP";
 
   function handleViewDetail(warehouse: Warehouse) {
     if (!permissions.can("warehouses:view-detail")) {
@@ -74,8 +75,8 @@ export function WarehousesPage() {
               <div className="flex items-center gap-2">
                 <RadioTower className="h-4 w-4 text-slate-500" aria-hidden="true" />
                 <StatusBadge
-                  label={statusLoading ? "Verificando" : isBackendUp ? "Sistema operativo" : "Sin conexion"}
-                  tone={statusLoading ? "neutral" : isBackendUp ? "success" : "danger"}
+                  label={systemStatus.loading ? "Verificando" : getSystemStatusLabel(systemStatus.health?.status)}
+                  tone={systemStatus.loading ? "neutral" : getStatusTone(systemStatus.health?.status)}
                 />
               </div>
             </div>
@@ -107,6 +108,13 @@ export function WarehousesPage() {
 
       <WarehousesSummaryCards summary={warehouses.summary} loading={warehouses.initialLoading} />
 
+      <ServiceStatusBanner
+        health={systemStatus.health}
+        serviceKeys={["inventory"]}
+        loading={warehouses.refreshing || systemStatus.loading}
+        onRetry={() => void Promise.all([warehouses.refresh(), systemStatus.refresh()])}
+      />
+
       <WarehousesFilters
         filters={warehouses.filters}
         warehouses={warehouses.warehouses}
@@ -127,8 +135,9 @@ export function WarehousesPage() {
         <WarehouseEmptyState hasActiveFilters={warehouses.hasActiveFilters} onResetFilters={warehouses.resetFilters} />
       ) : (
         <WarehousesTable
-          warehouses={warehouses.filteredWarehouses}
+          warehouses={warehouses.paginatedWarehouses}
           loading={false}
+          pagination={warehouses.pagination}
           onViewDetail={handleViewDetail}
           onViewStock={handleViewStock}
           permissions={{

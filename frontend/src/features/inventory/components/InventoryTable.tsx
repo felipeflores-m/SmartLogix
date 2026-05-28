@@ -1,6 +1,7 @@
 import { Eye, Pencil, Power, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
+import { DataPagination, type DataPaginationProps } from "@/components/ui/data-pagination";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { InventoryStatusBadge } from "@/features/inventory/components/InventoryStatusBadge";
 import type { InventoryItem } from "@/features/inventory/types/inventoryTypes";
@@ -9,6 +10,7 @@ import { cn } from "@/utils/cn";
 type InventoryTableProps = {
   items: InventoryItem[];
   loading: boolean;
+  pagination: DataPaginationProps;
   permissions: InventoryActionPermissions;
   onViewDetail: (item: InventoryItem) => void;
   onEditProduct: (item: InventoryItem) => void;
@@ -34,7 +36,16 @@ const currencyFormatter = new Intl.NumberFormat("es-CL", {
   maximumFractionDigits: 0
 });
 
-export function InventoryTable({ items, loading, onViewDetail, onEditProduct, onAdjustStock, onDeactivateProduct, permissions }: InventoryTableProps) {
+export function InventoryTable({
+  items,
+  loading,
+  pagination,
+  onViewDetail,
+  onEditProduct,
+  onAdjustStock,
+  onDeactivateProduct,
+  permissions
+}: InventoryTableProps) {
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-panel transition-all duration-200 hover:border-slate-300 hover:shadow-md">
       <div className="flex flex-col gap-2 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -42,7 +53,9 @@ export function InventoryTable({ items, loading, onViewDetail, onEditProduct, on
           <h3 className="text-base font-semibold text-slate-950">Productos registrados</h3>
           <p className="mt-1 text-sm text-slate-500">Disponibilidad actual por producto.</p>
         </div>
-        <p className="text-sm font-medium text-slate-500">{loading ? "Cargando..." : `${items.length.toLocaleString("es-CL")} productos`}</p>
+        <p className="text-sm font-medium text-slate-500">
+          {loading ? "Cargando..." : `${pagination.totalItems.toLocaleString("es-CL")} productos`}
+        </p>
       </div>
 
       <div className="grid gap-3 p-3 md:hidden">
@@ -94,6 +107,8 @@ export function InventoryTable({ items, loading, onViewDetail, onEditProduct, on
           </tbody>
         </table>
       </div>
+
+      {!loading ? <DataPagination {...pagination} /> : null}
     </section>
   );
 }

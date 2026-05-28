@@ -8,6 +8,7 @@ import cl.duoc.smartlogix.shipping.presentation.dto.request.UpdateShipmentStatus
 import cl.duoc.smartlogix.shipping.presentation.dto.response.ShipmentResponse;
 import cl.duoc.smartlogix.shipping.presentation.dto.response.ShipmentStatusHistoryResponse;
 import cl.duoc.smartlogix.shipping.shared.response.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/shipping/shipments")
+@Tag(name = "Envios", description = "Gestion de envios, transportistas asignados y estados")
 public class ShipmentController {
 
     private final ShipmentService shipmentService;

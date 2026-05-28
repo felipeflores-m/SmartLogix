@@ -3,6 +3,7 @@ package cl.duoc.smartlogix.identity.shared.error;
 import cl.duoc.smartlogix.identity.domain.exception.DuplicateResourceException;
 import cl.duoc.smartlogix.identity.domain.exception.InvalidCredentialsException;
 import cl.duoc.smartlogix.identity.domain.exception.ResourceNotFoundException;
+import cl.duoc.smartlogix.identity.domain.exception.BusinessRuleException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
@@ -37,6 +38,14 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         return buildErrorResponse(HttpStatus.CONFLICT, exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(BusinessRuleException.class)
+    public ResponseEntity<ErrorResponse> handleBusinessRule(
+            BusinessRuleException exception,
+            HttpServletRequest request
+    ) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

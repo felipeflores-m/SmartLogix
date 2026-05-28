@@ -5,6 +5,7 @@ import cl.duoc.smartlogix.orders.presentation.dto.request.CreateCustomerRequest;
 import cl.duoc.smartlogix.orders.presentation.dto.request.UpdateCustomerRequest;
 import cl.duoc.smartlogix.orders.presentation.dto.response.CustomerResponse;
 import cl.duoc.smartlogix.orders.shared.response.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/orders/customers")
+@Tag(name = "Clientes", description = "Consulta y mantenimiento de clientes")
 public class CustomerController {
 
     private final CustomerService customerService;

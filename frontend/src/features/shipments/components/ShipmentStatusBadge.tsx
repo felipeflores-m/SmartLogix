@@ -14,7 +14,7 @@ export function ShipmentStatusBadge({ status }: ShipmentStatusBadgeProps) {
   const badge = (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1",
+        "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 transition-colors duration-200",
         (status === "CREATED" || status === "PENDING_ASSIGNMENT") && "bg-yellow-50 text-yellow-800 ring-yellow-600/20",
         status === "ASSIGNED" && "bg-blue-50 text-blue-700 ring-blue-600/20",
         status === "IN_TRANSIT" && "bg-cyan-50 text-cyan-700 ring-cyan-600/20",

@@ -3,6 +3,7 @@ import { getShipmentCustomerDisplayName } from "@/features/shipments/utils/shipm
 import type { Shipment } from "@/features/carriers/types/carrierTypes";
 import { ReportChartCard } from "@/features/reports/components/ReportChartCard";
 import { ReportTable, type ReportTableColumn } from "@/features/reports/components/ReportTable";
+import { ShipmentsStatusChart } from "@/features/reports/components/ShipmentsStatusChart";
 import type { ShipmentsReport } from "@/features/reports/types/reportTypes";
 
 type ShipmentsReportSectionProps = {
@@ -51,7 +52,7 @@ export function ShipmentsReportSection({ report }: ShipmentsReportSectionProps) 
   return (
     <section className="space-y-5">
       <div className="grid gap-5 xl:grid-cols-2">
-        <ReportChartCard title="Envios por estado" description="Distribucion de despachos registrados." data={report.shipmentsByStatus} />
+        <ShipmentsStatusChart data={report.shipmentsByStatus} />
         <ReportChartCard
           title="Resumen de envios"
           description="Seguimiento logistico consolidado."

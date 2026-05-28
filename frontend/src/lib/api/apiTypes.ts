@@ -14,8 +14,19 @@ export type ApiErrorResponse = {
 
 export type HealthCheckResponse = {
   status: "UP" | "DOWN" | "OUT_OF_SERVICE" | "UNKNOWN" | string;
+  checkedAt?: string;
+  services?: SystemServiceHealth[];
   components?: Record<string, unknown>;
   groups?: string[];
+};
+
+export type SystemServiceKey = "gateway" | "identity" | "inventory" | "orders" | "shipping" | "frontend" | string;
+
+export type SystemServiceHealth = {
+  key: SystemServiceKey;
+  name: string;
+  status: "UP" | "DOWN" | "DEGRADED" | "OUT_OF_SERVICE" | "UNKNOWN" | string;
+  message?: string;
 };
 
 export type LoginRequest = {
@@ -39,4 +50,7 @@ export type UserResponse = {
   email: string;
   fullName: string;
   role: AuthRole;
+  active?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 };

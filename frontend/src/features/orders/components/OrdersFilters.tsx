@@ -46,13 +46,14 @@ export function OrdersFilters({
 }: OrdersFiltersProps) {
   const activeCustomers = customers.filter((customer) => customer.active);
   const activeWarehouses = warehouses.filter((warehouse) => warehouse.active);
+  const fieldClassName = "block min-w-0 text-sm font-semibold text-slate-800";
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-panel transition-all duration-200 hover:border-slate-300 hover:shadow-md sm:p-5">
-      <div className="grid gap-4 xl:grid-cols-[minmax(260px,1fr)_190px_220px_220px_auto]">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <SearchBox orders={orders} query={filters.query} searching={searching} onChange={(query) => onChange({ query })} />
 
-        <label className="block text-sm font-semibold text-slate-800">
+        <label className={fieldClassName}>
           Estado
           <select
             className={selectClassName}
@@ -68,7 +69,7 @@ export function OrdersFilters({
           </select>
         </label>
 
-        <label className="block text-sm font-semibold text-slate-800">
+        <label className={fieldClassName}>
           Cliente
           <select
             className={selectClassName}
@@ -85,7 +86,7 @@ export function OrdersFilters({
           </select>
         </label>
 
-        <label className="block text-sm font-semibold text-slate-800">
+        <label className={fieldClassName}>
           Bodega
           <select
             className={selectClassName}
@@ -102,10 +103,15 @@ export function OrdersFilters({
           </select>
         </label>
 
-        <div className="flex items-end gap-2">
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <DateInput label="Desde" value={filters.dateFrom} onChange={(dateFrom) => onChange({ dateFrom })} />
+        <DateInput label="Hasta" value={filters.dateTo} onChange={(dateTo) => onChange({ dateTo })} />
+        <div className="flex min-w-0 items-end gap-2 md:col-span-2 xl:col-span-2">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button type="button" variant="secondary" className="min-h-12 flex-1 xl:flex-none" onClick={onRefresh} disabled={loading}>
+              <Button type="button" variant="secondary" className="min-h-12 w-full sm:w-auto" onClick={onRefresh} disabled={loading}>
                 {loading ? <Spinner size="sm" label="Actualizando pedidos" /> : <RefreshCw className="h-4 w-4" aria-hidden="true" />}
                 Actualizar
               </Button>
@@ -123,11 +129,6 @@ export function OrdersFilters({
             </Tooltip>
           ) : null}
         </div>
-      </div>
-
-      <div className="mt-4 grid gap-4 md:grid-cols-2 xl:max-w-[460px]">
-        <DateInput label="Desde" value={filters.dateFrom} onChange={(dateFrom) => onChange({ dateFrom })} />
-        <DateInput label="Hasta" value={filters.dateTo} onChange={(dateTo) => onChange({ dateTo })} />
       </div>
     </section>
   );
@@ -163,7 +164,7 @@ function SearchBox({
   }, []);
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative min-w-0">
       <label htmlFor={inputId} className="block text-sm font-semibold text-slate-800">
         Buscar pedido
       </label>
@@ -226,7 +227,7 @@ function DateInput({ label, value, onChange }: { label: string; value: string; o
   const inputId = useId();
 
   return (
-    <label htmlFor={inputId} className="block text-sm font-semibold text-slate-800">
+    <label htmlFor={inputId} className="block min-w-0 text-sm font-semibold text-slate-800">
       Fecha {label.toLocaleLowerCase("es-CL")}
       <div className="relative mt-2">
         <CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />

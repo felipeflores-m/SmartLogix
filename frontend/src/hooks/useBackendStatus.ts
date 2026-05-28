@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { getSafeErrorMessage } from "@/lib/api/apiErrors";
-import type { HealthCheckResponse } from "@/lib/api/apiTypes";
+import type { HealthCheckResponse, SystemServiceHealth } from "@/lib/api/apiTypes";
 import { backendStatusApi } from "@/services/backendStatusApi";
 
 export function useBackendStatus() {
@@ -14,9 +14,9 @@ export function useBackendStatus() {
 
     try {
       const response = await backendStatusApi.getHealth();
-      setHealth(response);
+      setHealth(withFrontendStatus(response));
     } catch (healthError) {
-      setHealth(null);
+      setHealth(buildUnavailableGatewayHealth());
       setError(getSafeErrorMessage(healthError));
     } finally {
       setLoading(false);
@@ -32,5 +32,42 @@ export function useBackendStatus() {
     loading,
     error,
     refresh
+  };
+}
+
+function withFrontendStatus(response: HealthCheckResponse): HealthCheckResponse {
+  const services = response.services ?? [];
+  const hasFrontend = services.some((service) => service.key === "frontend");
+
+  return {
+    ...response,
+    services: hasFrontend ? services : [...services, frontendService()]
+  };
+}
+
+function buildUnavailableGatewayHealth(): HealthCheckResponse {
+  const services: SystemServiceHealth[] = [
+    {
+      key: "gateway",
+      name: "API Gateway",
+      status: "DOWN",
+      message: "No fue posible conectar con el sistema. Intenta nuevamente en unos minutos."
+    },
+    frontendService()
+  ];
+
+  return {
+    status: "DOWN",
+    checkedAt: new Date().toISOString(),
+    services
+  };
+}
+
+function frontendService(): SystemServiceHealth {
+  return {
+    key: "frontend",
+    name: "Frontend",
+    status: "UP",
+    message: "Interfaz disponible."
   };
 }

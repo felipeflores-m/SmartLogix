@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { DataPagination, type DataPaginationProps } from "@/components/ui/data-pagination";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ShipmentActions } from "@/features/shipments/components/ShipmentActions";
 import { ShipmentStatusBadge } from "@/features/shipments/components/ShipmentStatusBadge";
@@ -9,6 +10,7 @@ import { cn } from "@/utils/cn";
 type ShipmentsTableProps = {
   shipments: Shipment[];
   loading: boolean;
+  pagination: DataPaginationProps;
   permissions: ShipmentActionPermissions;
   onViewDetail: (shipment: Shipment) => void;
   onChangeStatus: (shipment: Shipment) => void;
@@ -26,7 +28,7 @@ const dateFormatter = new Intl.DateTimeFormat("es-CL", {
   timeStyle: "short"
 });
 
-export function ShipmentsTable({ loading, onCancel, onChangeStatus, onViewDetail, permissions, shipments }: ShipmentsTableProps) {
+export function ShipmentsTable({ loading, onCancel, onChangeStatus, onViewDetail, pagination, permissions, shipments }: ShipmentsTableProps) {
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-panel transition-all duration-200 hover:border-slate-300 hover:shadow-md">
       <div className="flex flex-col gap-2 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -34,7 +36,9 @@ export function ShipmentsTable({ loading, onCancel, onChangeStatus, onViewDetail
           <h3 className="text-base font-semibold text-slate-950">Envios registrados</h3>
           <p className="mt-1 text-sm text-slate-500">Seguimiento logistico por despacho.</p>
         </div>
-        <p className="text-sm font-medium text-slate-500">{loading ? "Cargando..." : `${shipments.length.toLocaleString("es-CL")} envios`}</p>
+        <p className="text-sm font-medium text-slate-500">
+          {loading ? "Cargando..." : `${pagination.totalItems.toLocaleString("es-CL")} envios`}
+        </p>
       </div>
 
       <div className="grid gap-3 p-3 md:hidden">
@@ -88,6 +92,8 @@ export function ShipmentsTable({ loading, onCancel, onChangeStatus, onViewDetail
           </tbody>
         </table>
       </div>
+
+      {!loading ? <DataPagination {...pagination} /> : null}
     </section>
   );
 }

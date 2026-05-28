@@ -5,6 +5,7 @@ import cl.duoc.smartlogix.identity.presentation.dto.request.LoginRequest;
 import cl.duoc.smartlogix.identity.presentation.dto.response.LoginResponse;
 import cl.duoc.smartlogix.identity.presentation.dto.response.UserResponse;
 import cl.duoc.smartlogix.identity.shared.response.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/auth")
+@Tag(name = "Autenticacion", description = "Inicio de sesion y consulta de usuario autenticado")
 public class AuthController {
 
     private final AuthService authService;

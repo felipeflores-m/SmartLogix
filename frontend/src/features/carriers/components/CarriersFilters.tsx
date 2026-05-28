@@ -39,12 +39,14 @@ export function CarriersFilters({
   searching,
   serviceTypes
 }: CarriersFiltersProps) {
+  const fieldClassName = "block min-w-0 text-sm font-semibold text-slate-800";
+
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-panel transition-all duration-200 hover:border-slate-300 hover:shadow-md sm:p-5">
-      <div className="grid gap-4 lg:grid-cols-[minmax(260px,1fr)_220px_220px_auto]">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <SearchBox carriers={carriers} query={filters.query} searching={searching} onChange={(query) => onChange({ query })} />
 
-        <label className="block text-sm font-semibold text-slate-800">
+        <label className={fieldClassName}>
           Estado
           <select
             className={selectClassName}
@@ -59,7 +61,7 @@ export function CarriersFilters({
           </select>
         </label>
 
-        <label className="block text-sm font-semibold text-slate-800">
+        <label className={fieldClassName}>
           Servicio
           <select
             className={selectClassName}
@@ -76,10 +78,10 @@ export function CarriersFilters({
           </select>
         </label>
 
-        <div className="flex items-end gap-2">
+        <div className="flex min-w-0 items-end gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button type="button" variant="secondary" className="min-h-12 flex-1 lg:flex-none" onClick={onRefresh} disabled={loading}>
+              <Button type="button" variant="secondary" className="min-h-12 w-full sm:w-auto" onClick={onRefresh} disabled={loading}>
                 {loading ? <Spinner size="sm" label="Actualizando transportistas" /> : <RefreshCw className="h-4 w-4" aria-hidden="true" />}
                 Actualizar
               </Button>
@@ -132,7 +134,7 @@ function SearchBox({
   }, []);
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative min-w-0">
       <label htmlFor={inputId} className="block text-sm font-semibold text-slate-800">
         Buscar transportista
       </label>

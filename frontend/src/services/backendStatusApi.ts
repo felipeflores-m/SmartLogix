@@ -4,7 +4,7 @@ import { httpClient } from "@/lib/api/httpClient";
 
 export const backendStatusApi = {
   getHealth(): Promise<HealthCheckResponse> {
-    return httpClient.get<HealthCheckResponse>("/actuator/health", {
+    return httpClient.get<HealthCheckResponse>("/api/system/health", {
       auth: false,
       parse: parseHealthCheckResponse
     });

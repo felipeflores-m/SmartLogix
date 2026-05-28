@@ -10,6 +10,7 @@ import type {
   WarehouseResponse
 } from "@/features/inventory/types/inventoryTypes";
 import { getSafeErrorMessage } from "@/lib/api/apiErrors";
+import { useClientPagination } from "@/hooks/useClientPagination";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 const DEFAULT_FILTERS: InventoryFilters = {
@@ -67,17 +68,20 @@ export function useInventory() {
 
   const effectiveFilters = useMemo(() => ({ ...filters, query: debouncedQuery }), [debouncedQuery, filters]);
   const filteredItems = useMemo(() => filterInventory(items, effectiveFilters), [effectiveFilters, items]);
+  const { paginatedItems, pagination, resetPage } = useClientPagination(filteredItems);
   const summary = useMemo(() => calculateSummary(items), [items]);
   const hasActiveFilters = filters.query.trim() !== "" || filters.stockStatus !== "all" || filters.warehouseId !== "all" || !filters.activeOnly;
   const searching = filters.query !== debouncedQuery;
 
   const updateFilters = useCallback((nextFilters: Partial<InventoryFilters>) => {
+    resetPage();
     setFilters((current) => ({ ...current, ...nextFilters }));
-  }, []);
+  }, [resetPage]);
 
   const resetFilters = useCallback(() => {
+    resetPage();
     setFilters(DEFAULT_FILTERS);
-  }, []);
+  }, [resetPage]);
 
   const createProduct = useCallback(
     async (input: CreateProductWithInitialStockRequest) => {
@@ -190,6 +194,8 @@ export function useInventory() {
   return {
     items,
     filteredItems,
+    paginatedItems,
+    pagination,
     warehouses,
     filters,
     summary,

@@ -1,172 +1,118 @@
 # SmartLogix
 
-Plataforma logística eCommerce con microservicios Spring Boot: API Gateway, Inventario, Pedidos y Envíos.
+SmartLogix es un sistema academico de gestion logistica para inventario, pedidos, envios, transportistas, bodegas, reportes y configuracion administrativa. La aplicacion esta organizada como frontend React y microservicios Spring Boot protegidos con JWT.
 
 ## Arquitectura
 
-Los microservicios backend de SmartLogix deben usar Arquitectura de Capas obligatoria, separando `presentation`, `application`, `domain`, `infrastructure`, `config` y `shared`. Esta regla está documentada en `AGENTS.md` y debe considerarse antes de crear o modificar código en `inventory-service`, `order-service`, `shipping-service` y `api-gateway`.
+- `frontend`: React, TypeScript, Vite, Tailwind, shadcn-style UI y Recharts.
+- `api-gateway`: entrada unica del frontend y health agregado del sistema.
+- `identity-service`: autenticacion, sesion, roles y administracion de usuarios.
+- `inventory-service`: productos, stock, bodegas y movimientos.
+- `order-service`: clientes, pedidos y estados.
+- `shipping-service`: envios, transportistas y asignaciones.
+- Infraestructura local: PostgreSQL por servicio, RabbitMQ y pgAdmin.
 
-El `api-gateway` no debe incluir JPA, entities ni repositories en este MVP; su responsabilidad es enrutar, centralizar la entrada del frontend y aplicar configuración transversal básica.
+## Requisitos
 
-## Infraestructura local
+- Java 21
+- Node.js 22 o compatible con Vite 6
+- Docker Desktop
+- Maven Wrapper incluido en cada microservicio
 
-SmartLogix usa Docker Compose para levantar la infraestructura base del MVP académico:
+## Ejecutar con Docker
 
-- PostgreSQL para Inventario.
-- PostgreSQL para Pedidos.
-- PostgreSQL para Envíos.
-- RabbitMQ para eventos entre microservicios.
-- pgAdmin opcional para administración visual de bases de datos.
-
-Los microservicios Spring Boot todavía no están dockerizados en esta etapa. Deben ejecutarse localmente en sus puertos definidos cuando corresponda:
-
-- `api-gateway`: `8080`
-- `inventory-service`: `8081`
-- `order-service`: `8082`
-- `shipping-service`: `8083`
-- `identity-service`: `8084`
-
-### Comandos Docker Compose
-
-Levantar infraestructura:
+Docker Compose levanta infraestructura y el frontend de produccion:
 
 ```bash
-docker compose up -d
-```
-
-Detener infraestructura:
-
-```bash
+docker compose up --build
 docker compose down
+docker compose logs -f frontend
 ```
 
-Ver logs:
+El frontend queda disponible en `http://localhost:5173`. Los microservicios Spring Boot siguen ejecutandose manualmente en esta version, usando las bases de datos y RabbitMQ del compose.
+
+## Ejecutar backend manual
+
+Inicia cada servicio en una terminal:
 
 ```bash
-docker compose logs -f
+cd identity-service && mvnw.cmd spring-boot:run
+cd inventory-service && mvnw.cmd spring-boot:run
+cd order-service && mvnw.cmd spring-boot:run
+cd shipping-service && mvnw.cmd spring-boot:run
+cd api-gateway && mvnw.cmd spring-boot:run
 ```
 
-### URLs importantes
+Puertos por defecto:
 
-- RabbitMQ Management: `http://localhost:15672`
-- pgAdmin: `http://localhost:5050`
+- API Gateway: `http://localhost:8080`
+- Inventory: `http://localhost:8081`
+- Orders: `http://localhost:8082`
+- Shipping: `http://localhost:8083`
+- Identity: `http://localhost:8084`
 
-### Credenciales de desarrollo
+## Ejecutar frontend manual
 
-Estas credenciales son solo para entorno académico local. No deben usarse en producción ni publicarse como secretos reales.
-
-| Servicio | Usuario / Email | Contraseña |
-| --- | --- | --- |
-| PostgreSQL | `smartlogix` | `smartlogix123` |
-| RabbitMQ | `smartlogix` | `smartlogix123` |
-| pgAdmin | `admin@smartlogix.cl` | `admin123` |
-
-### Bases de datos
-
-| Servicio Docker | Base de datos | Puerto local | Puerto contenedor |
-| --- | --- | --- | --- |
-| `postgres-inventory` | `smartlogix_inventory_db` | `5433` | `5432` |
-| `postgres-orders` | `smartlogix_orders_db` | `5434` | `5432` |
-| `postgres-shipping` | `smartlogix_shipping_db` | `5435` | `5432` |
-| `postgres-identity` | `smartlogix_identity_db` | `5436` | `5432` |
-
-### RabbitMQ
-
-| Servicio Docker | Uso | Puerto local |
-| --- | --- | --- |
-| `rabbitmq` | AMQP | `5672` |
-| `rabbitmq` | Panel web de administración | `15672` |
-
-## Autenticación JWT
-
-SmartLogix usa `identity-service` como servicio central de autenticación. El login se realiza a través del API Gateway y devuelve un access token JWT firmado para acceder a rutas protegidas.
-
-Login:
-
-```http
-POST http://localhost:8080/api/auth/login
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
-Ejemplo:
+## Swagger
 
-```json
-{
-  "email": "admin@smartlogix.cl",
-  "password": "admin123"
-}
+- API Gateway: `http://localhost:8080/swagger-ui/index.html`
+- Inventory: `http://localhost:8081/swagger-ui/index.html`
+- Orders: `http://localhost:8082/swagger-ui/index.html`
+- Shipping: `http://localhost:8083/swagger-ui/index.html`
+- Identity: `http://localhost:8084/swagger-ui/index.html`
+
+Los documentos OpenAPI estan en `/v3/api-docs` en cada servicio.
+
+## Tests
+
+Frontend:
+
+```bash
+cd frontend
+npm run lint
+npm run build
+npm run test
 ```
 
-Usar el token en Bruno o en otro cliente HTTP:
+Backend por servicio:
 
-```text
-Authorization: Bearer <accessToken>
+```bash
+cd identity-service && mvnw.cmd test
+cd inventory-service && mvnw.cmd test
+cd order-service && mvnw.cmd test
+cd shipping-service && mvnw.cmd test
+cd api-gateway && mvnw.cmd test
 ```
 
-Usuarios demo:
+## Usuarios y roles
 
-| Rol | Email | Password |
-| --- | --- | --- |
-| `ADMIN` | `admin@smartlogix.cl` | `admin123` |
-| `OPERATOR` | `operator@smartlogix.cl` | `operator123` |
-| `VIEWER` | `viewer@smartlogix.cl` | `viewer123` |
+Los roles funcionales son:
 
-Las credenciales y la clave JWT configurada son solo para entorno académico local. No son secretos productivos.
+- `ADMIN`: acceso completo, configuracion y exportacion.
+- `OPERATOR`: operacion diaria sin configuracion ni exportacion de reportes.
+- `VIEWER`: lectura sin acciones mutantes.
 
-## Flujo backend completo
+Si existen usuarios semilla, revisa los `DataInitializer` de cada servicio o la base de datos local.
 
-1. El usuario inicia sesion en `identity-service` mediante el API Gateway.
-2. El frontend consulta inventario mediante `/api/inventory/**`.
-3. El usuario crea un pedido mediante `/api/orders`.
-4. Al confirmar el pedido, `order-service` publica `OrderCreatedEvent` en RabbitMQ.
-5. `inventory-service` consume el evento y descuenta stock con movimientos `ORDER_OUT`.
-6. `shipping-service` consume el mismo evento y crea un envio en estado `PENDING_ASSIGNMENT`.
-7. `shipping-service` permite asignar transportista y avanzar el despacho.
+## Documentacion
 
-Este flujo demuestra comunicacion asincrona y el patron Observer/Event Driven
-mediante RabbitMQ, manteniendo bases de datos independientes por microservicio.
+- [Arquitectura](docs/ARCHITECTURE.md)
+- [Frontend](docs/FRONTEND.md)
+- [Backend](docs/BACKEND.md)
+- [Roles y permisos](docs/ROLES_PERMISSIONS.md)
+- [Docker](docs/DOCKER.md)
+- [Testing](docs/TESTING.md)
+- [API](docs/API.md)
 
-## Pruebas con Bruno
+## Troubleshooting
 
-Las colecciones versionadas estan en:
-
-```text
-docs/SmartLogix/collections/
-```
-
-Las colecciones usan formato Bruno v3/OpenCollection YAML:
-
-- `opencollection.yml`
-- requests `.yml`
-- environments `.yml`
-
-Abrir Bruno, seleccionar `Open Collection` y usar primero:
-
-```text
-docs/SmartLogix/collections/smartlogix
-```
-
-Las requests usan URLs absolutas `http://localhost:*`, por lo que no dependen
-del environment para evitar errores `Invalid URL`. Seleccionar igualmente el
-environment `Local` para ver y persistir `token`, `orderId`, `orderNumber`,
-`shipmentId` y `shipmentNumber`.
-
-Orden recomendado para el Runner:
-
-1. `00 Health`
-2. `01 Auth / Login Admin`
-3. `01 Auth / Me`
-4. `02 Inventory`
-5. `03 Orders`
-6. `04 Event Driven Validation`
-7. `05 Shipping`
-
-El login intenta guardar automaticamente `token`. Si el script de Bruno no se
-ejecuta en la version instalada, copiar `data.accessToken` manualmente al
-environment. Lo mismo aplica para `orderId`, `orderNumber`, `shipmentId` y
-`shipmentNumber`.
-
-Guias:
-
-- `docs/bruno-guide.md`
-- `docs/demo-flujo-completo.md`
-- `docs/evidencia-defensa.md`
+- Si el frontend no puede iniciar sesion, confirma que `api-gateway` este en `http://localhost:8080`.
+- Si una pagina muestra un servicio no disponible, revisa el health del microservicio correspondiente.
+- Si Docker mantiene datos antiguos, ejecuta `docker compose down -v` solo cuando quieras reiniciar las bases locales.
+- Si Swagger no carga, confirma que el servicio este levantado y revisa `/actuator/health`.

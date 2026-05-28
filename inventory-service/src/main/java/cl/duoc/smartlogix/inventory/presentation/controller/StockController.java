@@ -6,6 +6,7 @@ import cl.duoc.smartlogix.inventory.presentation.dto.request.UpdateStockMinimumR
 import cl.duoc.smartlogix.inventory.presentation.dto.response.StockMovementResponse;
 import cl.duoc.smartlogix.inventory.presentation.dto.response.StockResponse;
 import cl.duoc.smartlogix.inventory.shared.response.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/inventory/stock")
+@Tag(name = "Stock", description = "Stock por producto, minimos y movimientos")
 public class StockController {
 
     private final StockService stockService;

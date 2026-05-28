@@ -15,13 +15,22 @@ class GatewayRoutesPropertiesTest {
 
     @Test
     void shouldBindGatewayWebMvcRoutes() {
-        assertThat(gatewayMvcProperties.getRoutes()).hasSize(4);
+        assertThat(gatewayMvcProperties.getRoutes()).hasSize(5);
 
         assertThat(gatewayMvcProperties.getRoutes())
                 .extracting("id")
-                .containsExactly("identity-service", "inventory-service", "order-service", "shipping-service");
+                .containsExactly(
+                        "identity-service",
+                        "identity-users-service",
+                        "inventory-service",
+                        "order-service",
+                        "shipping-service"
+                );
 
         assertThat(gatewayMvcProperties.getRoutes().getFirst().getUri().toString())
+                .isEqualTo(GatewayRoutesInfo.AUTH_URI);
+
+        assertThat(gatewayMvcProperties.getRoutes().get(1).getUri().toString())
                 .isEqualTo(GatewayRoutesInfo.AUTH_URI);
     }
 }

@@ -1,3 +1,4 @@
+import { InventoryCriticalChart } from "@/features/reports/components/InventoryCriticalChart";
 import { ReportChartCard } from "@/features/reports/components/ReportChartCard";
 import { ReportTable, type ReportTableColumn } from "@/features/reports/components/ReportTable";
 import type { InventoryReport } from "@/features/reports/types/reportTypes";
@@ -48,11 +49,7 @@ export function InventoryReportSection({ report }: InventoryReportSectionProps) 
   return (
     <section className="space-y-5">
       <div className="grid gap-5 xl:grid-cols-2">
-        <ReportChartCard
-          title="Stock por bodega"
-          description="Distribucion de unidades por ubicacion registrada."
-          data={report.stockByWarehouse}
-        />
+        <InventoryCriticalChart products={report.criticalProducts} />
         <ReportChartCard
           title="Resumen de inventario"
           description="Alertas principales sobre disponibilidad."

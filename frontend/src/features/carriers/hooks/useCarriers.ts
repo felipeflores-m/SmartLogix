@@ -10,6 +10,7 @@ import {
   type Shipment
 } from "@/features/carriers/types/carrierTypes";
 import { getSafeErrorMessage } from "@/lib/api/apiErrors";
+import { useClientPagination } from "@/hooks/useClientPagination";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 const DEFAULT_FILTERS: CarrierFilters = {
@@ -33,6 +34,7 @@ export function useCarriers() {
   const carriers = useMemo(() => apiCarriers.map((carrier) => carrierToCarrier(carrier, shipments)), [apiCarriers, shipments]);
   const effectiveFilters = useMemo(() => ({ ...filters, query: debouncedQuery }), [debouncedQuery, filters]);
   const filteredCarriers = useMemo(() => filterCarriers(carriers, effectiveFilters), [carriers, effectiveFilters]);
+  const { paginatedItems: paginatedCarriers, pagination, resetPage } = useClientPagination(filteredCarriers);
   const summary = useMemo(() => calculateSummary(carriers), [carriers]);
   const serviceTypes = useMemo(() => getServiceTypes(carriers), [carriers]);
   const hasActiveFilters = Boolean(filters.query.trim() || filters.status !== "all" || filters.serviceType !== "all");
@@ -83,12 +85,14 @@ export function useCarriers() {
   }, [loadCarriers]);
 
   const updateFilters = useCallback((nextFilters: Partial<CarrierFilters>) => {
+    resetPage();
     setFilters((current) => ({ ...current, ...nextFilters }));
-  }, []);
+  }, [resetPage]);
 
   const resetFilters = useCallback(() => {
+    resetPage();
     setFilters(DEFAULT_FILTERS);
-  }, []);
+  }, [resetPage]);
 
   const updateAvailability = useCallback(
     async (carrier: Carrier, simulatedAvailable: boolean) => {
@@ -112,6 +116,8 @@ export function useCarriers() {
   return {
     carriers,
     filteredCarriers,
+    paginatedCarriers,
+    pagination,
     shipments,
     filters,
     summary,
